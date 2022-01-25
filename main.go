@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -15,18 +14,19 @@ import (
 	keycloak "github.com/RedHatInsights/simple-kc-client"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
+	"github.com/redhatinsights/platform-go-middlewares/identity"
 	"go.uber.org/zap"
 )
 
-type IdentityUser struct {
-	// A user contains more attributes but we only care about 'username' for now
-	Username string `json:"username"`
-}
+var log logr.Logger
 
-type Identity struct {
-	AccountNumber string       `json:"account_number"`
-	Type          string       `json:"type"`
-	User          IdentityUser `json:"user"`
+func init() {
+
+	zapLog, err := zap.NewDevelopment()
+	if err != nil {
+		panic(fmt.Sprintf("who watches the watchmen (%v)?", err))
+	}
+	log = zapr.NewLogger(zapLog)
 }
 
 func getUserFromIdentity(r *http.Request) (*User, error) {
@@ -40,17 +40,17 @@ func getUserFromIdentity(r *http.Request) (*User, error) {
 		return &User{}, err
 	}
 
-	identity := &Identity{}
+	identity := &identity.XRHID{}
 	err = json.Unmarshal(decodedIdentity, &identity)
 	if err != nil {
 		return &User{}, err
 	}
 
-	if identity.Type != "User" || identity.User.Username == "" {
-		return &User{}, fmt.Errorf("x-rh-identity does not contain username")
+	if identity.Identity.Type != "User" || identity.Identity.User.Username == "" {
+		return &User{}, fmt.Errorf("x-rh-identity does not contain username ok")
 	}
 
-	user, err := findUserById(identity.User.Username)
+	user, err := findUserById(identity.Identity.User.Username)
 	if err != nil {
 		return &User{}, err
 	}
@@ -208,7 +208,7 @@ func entitlements(w http.ResponseWriter, r *http.Request) {
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+	log.Info(fmt.Sprintf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL))
 	switch {
 	case r.URL.Path == "/":
 		statusHandler(w, r)
@@ -220,13 +220,6 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 var k *keycloak.KeyCloakClient
 
 func main() {
-	var log logr.Logger
-
-	zapLog, err := zap.NewDevelopment()
-	if err != nil {
-		panic(fmt.Sprintf("who watches the watchmen (%v)?", err))
-	}
-	log = zapr.NewLogger(zapLog)
 
 	key, err := keycloak.NewKeyCloakClient(KEYCLOAK_SERVER, KEYCLOAK_USERNAME, KEYCLOAK_PASSWORD, context.Background(), "master", log)
 
