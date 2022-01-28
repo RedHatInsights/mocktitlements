@@ -1,5 +1,5 @@
-github.com/RedHatInsights/simple-kc-client v0.0.1 h1:kEFCs1kkJblItAIjnrg5gs5CYaS1jTXXiEBGfzNbbBI=
-github.com/RedHatInsights/simple-kc-client v0.0.1/go.mod h1:ui3bDpEhbpGxTmffdzUVrE9MK93YcS9S4zd271Z9r14=
+github.com/RedHatInsights/simple-kc-client v0.0.3 h1:9x8PZ2kbvfTFTd7n7U3CrJ9ronkotgEi8LakICYKNpk=
+github.com/RedHatInsights/simple-kc-client v0.0.3/go.mod h1:ctTJFcWGT/Tec/S4l7RnDV2ddVjZ0OqxDMF7XK4iT1U=
 github.com/aws/aws-sdk-go v1.38.51/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
@@ -8,6 +8,7 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/go-chi/chi v4.0.2+incompatible/go.mod h1:eB3wogJHnLi3x/kFX2A+IbTBlXxmMeXJVKy9tTv1XzQ=
+github.com/go-logr/logr v0.4.0/go.mod h1:z6/tIYblkpsD+a4lm/fGIIU9mZ+XfAiaFtq7xTgseGU=
 github.com/go-logr/logr v1.2.2 h1:ahHml/yUpnlb96Rp8HCvtYVPY8ZYpxq3g7UYchIYwbs=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/zapr v1.2.2 h1:5YNlIL6oZLydaV4dOFjL8YpgXF/tPeTbnpatnu3cq6o=
