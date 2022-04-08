@@ -211,7 +211,7 @@ func parseUsers(data []byte) ([]User, error) {
 			Entitlements:  entitle,
 		})
 	}
-	fmt.Printf("%v", obj)
+
 	return users, nil
 }
 
