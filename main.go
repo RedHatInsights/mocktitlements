@@ -134,29 +134,48 @@ func getUsers() (users []User, err error) {
 		fmt.Printf("\n\n%s\n\n", err.Error())
 	}
 
-	obj := &[]usersSpec{}
-
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(data, obj)
+	return parseUsers(data)
+}
+
+func parseUsers(data []byte) ([]User, error) {
+	obj := &[]usersSpec{}
+
+	err := json.Unmarshal(data, obj)
 
 	if err != nil {
 		return nil, err
 	}
 
-	users = []User{}
+	users := []User{}
 
 	for _, user := range *obj {
+		attributesToCheck := []string{"is_active", "is_org_admin", "is_internal", "account_id", "org_id", "entitlements", "account_number"}
+		valid := true
+		for _, attr := range attributesToCheck {
+			if len(user.Attributes[attr]) == 0 {
+				valid = false
+				log.Info(fmt.Sprintf("User %s does not have field [%s]", user.Username, attr))
+				continue
+			}
+		}
+
+		if !valid {
+			log.Info(fmt.Sprintf("Skipping user %s as attributes are missing", user.Username))
+			continue
+		}
+
 		IsActiveRaw := user.Attributes["is_active"][0]
 		IsActive, _ := strconv.ParseBool(IsActiveRaw)
 
 		IsOrgAdminRaw := user.Attributes["is_org_admin"][0]
 		IsOrgAdmin, _ := strconv.ParseBool(IsOrgAdminRaw)
 
-		IsInternalRaw := user.Attributes["is_org_admin"][0]
+		IsInternalRaw := user.Attributes["is_internal"][0]
 		IsInternal, _ := strconv.ParseBool(IsInternalRaw)
 
 		IDRaw := user.Attributes["account_id"][0]
