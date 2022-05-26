@@ -79,16 +79,21 @@ type User struct {
 var KEYCLOAK_SERVER string
 var KEYCLOAK_USERNAME string
 var KEYCLOAK_PASSWORD string
+var KEYCLOAK_VERSION string
 
 func init() {
 	KEYCLOAK_SERVER = os.Getenv("KEYCLOAK_SERVER")
 	KEYCLOAK_USERNAME = os.Getenv("KEYCLOAK_USERNAME")
 	KEYCLOAK_PASSWORD = os.Getenv("KEYCLOAK_PASSWORD")
+	KEYCLOAK_VERSION = os.Getenv("KEYCLOAK_VERSION")
 	if KEYCLOAK_USERNAME == "" {
 		KEYCLOAK_USERNAME = "admin"
 	}
 	if KEYCLOAK_PASSWORD == "" {
 		KEYCLOAK_PASSWORD = "admin"
+	}
+	if KEYCLOAK_VERSION == "" {
+		KEYCLOAK_VERSION = "11.0.0"
 	}
 }
 
@@ -129,7 +134,7 @@ type usersSpec struct {
 }
 
 func getUsers() (users []User, err error) {
-	resp, err := k.Get("/auth/admin/realms/redhat-external/users?max=2000", "", map[string]string{})
+	resp, err := k.Get("/admin/realms/redhat-external/users?max=2000", "", map[string]string{})
 	if err != nil {
 		fmt.Printf("\n\n%s\n\n", err.Error())
 	}
@@ -239,8 +244,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 var k *keycloak.KeyCloakClient
 
 func main() {
-
-	key, err := keycloak.NewKeyCloakClient(KEYCLOAK_SERVER, KEYCLOAK_USERNAME, KEYCLOAK_PASSWORD, context.Background(), "master", log)
+	key, err := keycloak.NewKeyCloakClient(KEYCLOAK_SERVER, KEYCLOAK_USERNAME, KEYCLOAK_PASSWORD, context.Background(), "master", log, KEYCLOAK_VERSION)
 
 	k = key
 
