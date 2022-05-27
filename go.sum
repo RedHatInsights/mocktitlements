@@ -1,5 +1,5 @@
-github.com/RedHatInsights/simple-kc-client v1.1.0 h1:hcXx+wvgMyg5WXJu5NOxhiJEzdi36yYHOm4p+3zXYog=
-github.com/RedHatInsights/simple-kc-client v1.1.0/go.mod h1:GxPQyE2b9jdMkr2Wk05G9S8AYARjMminxHlrb5sfORA=
+github.com/RedHatInsights/simple-kc-client v1.1.1 h1:1GQjYM+yIRIugLQjHzx5/8KsSincxw6BrBQbMCVuqCo=
+github.com/RedHatInsights/simple-kc-client v1.1.1/go.mod h1:GxPQyE2b9jdMkr2Wk05G9S8AYARjMminxHlrb5sfORA=
 github.com/aws/aws-sdk-go v1.38.51/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
