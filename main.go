@@ -47,7 +47,7 @@ func getUserFromIdentity(r *http.Request) (*User, error) {
 	}
 
 	if identity.Identity.Type != "User" || identity.Identity.User.Username == "" {
-		return &User{}, fmt.Errorf("x-rh-identity does not contain username ok")
+		return &User{}, fmt.Errorf("x-rh-identity does not contain username")
 	}
 
 	user, err := findUserById(identity.Identity.User.Username)
@@ -189,13 +189,10 @@ func parseUsers(data []byte) ([]User, error) {
 		OrgIDRaw := user.Attributes["org_id"][0]
 		OrgID, _ := strconv.Atoi(OrgIDRaw)
 
-		var entitle string
+		var entitlementsJson string
 
-		if len(user.Attributes["newEntitlements"]) != 0 {
-			entitle = fmt.Sprintf("{%s}", strings.Join(user.Attributes["newEntitlements"], ","))
-
-		} else {
-			entitle = user.Attributes["entitlements"][0]
+		if len(user.Attributes["entitlements"]) != 0 {
+			entitlementsJson = fmt.Sprintf("{%s}", strings.Join(user.Attributes["entitlements"], ","))
 		}
 
 		users = append(users, User{
@@ -213,7 +210,7 @@ func parseUsers(data []byte) ([]User, error) {
 			OrgID:         OrgID,
 			DisplayName:   user.FirstName,
 			Type:          "User",
-			Entitlements:  entitle,
+			Entitlements:  entitlementsJson,
 		})
 	}
 
