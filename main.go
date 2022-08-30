@@ -238,6 +238,8 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		statusHandler(w, r)
 	case r.URL.Path == "/api/entitlements/v1/services":
 		entitlements(w, r)
+	case r.URL.Path == "/api/entitlements/v1/compliance":
+		entitlements(w, r)
 	}
 }
 
