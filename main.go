@@ -232,7 +232,7 @@ func entitlements(w http.ResponseWriter, r *http.Request) {
 }
 
 func compliance(w http.ResponseWriter, r *http.Request) {
-	userObj, err := getUser(w, r)
+	_, err := getUser(w, r)
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf("couldn't auth user: %s", err.Error()), http.StatusForbidden)
