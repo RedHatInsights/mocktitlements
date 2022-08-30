@@ -231,6 +231,17 @@ func entitlements(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(userObj.Entitlements))
 }
 
+func compliance(w http.ResponseWriter, r *http.Request) {
+	userObj, err := getUser(w, r)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("couldn't auth user: %s", err.Error()), http.StatusForbidden)
+		return
+	}
+
+	fmt.Fprint(w, "\"result\": \"OK\"\n\"description\":\"\" ")
+}
+
 func mainHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info(fmt.Sprintf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL))
 	switch {
@@ -239,7 +250,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	case r.URL.Path == "/api/entitlements/v1/services":
 		entitlements(w, r)
 	case r.URL.Path == "/api/entitlements/v1/compliance":
-		entitlements(w, r)
+		compliance(w, r)
 	}
 }
 
