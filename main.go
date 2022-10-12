@@ -7,15 +7,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
 
-	keycloak "github.com/RedHatInsights/simple-kc-client"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"github.com/redhatinsights/platform-go-middlewares/identity"
 	"go.uber.org/zap"
+
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 var log logr.Logger
@@ -79,21 +81,16 @@ type User struct {
 var KEYCLOAK_SERVER string
 var KEYCLOAK_USERNAME string
 var KEYCLOAK_PASSWORD string
-var KEYCLOAK_VERSION string
 
 func init() {
 	KEYCLOAK_SERVER = os.Getenv("KEYCLOAK_SERVER")
 	KEYCLOAK_USERNAME = os.Getenv("KEYCLOAK_USERNAME")
 	KEYCLOAK_PASSWORD = os.Getenv("KEYCLOAK_PASSWORD")
-	KEYCLOAK_VERSION = os.Getenv("KEYCLOAK_VERSION")
 	if KEYCLOAK_USERNAME == "" {
 		KEYCLOAK_USERNAME = "admin"
 	}
 	if KEYCLOAK_PASSWORD == "" {
 		KEYCLOAK_PASSWORD = "admin"
-	}
-	if KEYCLOAK_VERSION == "" {
-		KEYCLOAK_VERSION = "11.0.0"
 	}
 }
 
@@ -134,7 +131,7 @@ type usersSpec struct {
 }
 
 func getUsers() (users []User, err error) {
-	resp, err := k.Get("/admin/realms/redhat-external/users?max=2000", "", map[string]string{})
+	resp, err := k.Get(KEYCLOAK_SERVER + "auth/admin/realms/redhat-external/users?max=2000")
 	if err != nil {
 		fmt.Printf("\n\n%s\n\n", err.Error())
 	}
@@ -254,19 +251,21 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var k *keycloak.KeyCloakClient
+var k *http.Client
 
 func main() {
-	key, err := keycloak.NewKeyCloakClient(KEYCLOAK_SERVER, KEYCLOAK_USERNAME, KEYCLOAK_PASSWORD, context.Background(), "master", log, KEYCLOAK_VERSION)
-
-	k = key
-
-	if err != nil {
-		log.Error(err, "reason", "couldn't connect")
+	oauthClientConfig := clientcredentials.Config{
+		ClientID:       "admin-cli",
+		ClientSecret:   "",
+		TokenURL:       KEYCLOAK_SERVER + "auth/realms/master/protocol/openid-connect/token",
+		EndpointParams: url.Values{"grant_type": {"password"}, "username": {KEYCLOAK_USERNAME}, "password": {KEYCLOAK_PASSWORD}},
 	}
+
+	k = oauthClientConfig.Client(context.Background())
+
 	http.HandleFunc("/", mainHandler)
 
-	if err = http.ListenAndServe(":8090", nil); err != nil {
-		log.Error(err, "reason", "server couldn't start")
+	if err := http.ListenAndServe(":8090", nil); err != nil {
+		log.Error(err, "CouldNotStart", "reason", "server couldn't start")
 	}
 }
