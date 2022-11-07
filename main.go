@@ -131,7 +131,7 @@ type usersSpec struct {
 }
 
 func getUsers() (users []User, err error) {
-	resp, err := k.Get(KEYCLOAK_SERVER + "auth/admin/realms/redhat-external/users?max=2000")
+	resp, err := k.Get(KEYCLOAK_SERVER + "/auth/admin/realms/redhat-external/users?max=2000")
 	if err != nil {
 		fmt.Printf("\n\n%s\n\n", err.Error())
 	}
@@ -257,7 +257,7 @@ func main() {
 	oauthClientConfig := clientcredentials.Config{
 		ClientID:       "admin-cli",
 		ClientSecret:   "",
-		TokenURL:       KEYCLOAK_SERVER + "auth/realms/master/protocol/openid-connect/token",
+		TokenURL:       KEYCLOAK_SERVER + "/auth/realms/master/protocol/openid-connect/token",
 		EndpointParams: url.Values{"grant_type": {"password"}, "username": {KEYCLOAK_USERNAME}, "password": {KEYCLOAK_PASSWORD}},
 	}
 
