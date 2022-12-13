@@ -135,7 +135,7 @@ func getUsers() (users []User, err error) {
 	if err != nil {
 		fmt.Printf("\n\n%s\n\n", err.Error())
 	}
-
+	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
