@@ -5,12 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
@@ -52,7 +53,7 @@ func getUserFromIdentity(r *http.Request) (*User, error) {
 		return &User{}, fmt.Errorf("x-rh-identity does not contain username ok")
 	}
 
-	user, err := findUserById(identity.Identity.User.Username)
+	user, err := findUserByID(identity.Identity.User.Username)
 	if err != nil {
 		return &User{}, err
 	}
@@ -78,23 +79,23 @@ type User struct {
 	Entitlements  string `json:"entitlements"`
 }
 
-var KEYCLOAK_SERVER string
-var KEYCLOAK_USERNAME string
-var KEYCLOAK_PASSWORD string
+var KeyCloakServer string
+var KeyCloakUsername string
+var KeyCloakPassword string
 
 func init() {
-	KEYCLOAK_SERVER = os.Getenv("KEYCLOAK_SERVER")
-	KEYCLOAK_USERNAME = os.Getenv("KEYCLOAK_USERNAME")
-	KEYCLOAK_PASSWORD = os.Getenv("KEYCLOAK_PASSWORD")
-	if KEYCLOAK_USERNAME == "" {
-		KEYCLOAK_USERNAME = "admin"
+	KeyCloakServer = os.Getenv("KEYCLOAK_SERVER")
+	KeyCloakUsername = os.Getenv("KEYCLOAK_USERNAME")
+	KeyCloakPassword = os.Getenv("KEYCLOAK_PASSWORD")
+	if KeyCloakUsername == "" {
+		KeyCloakUsername = "admin"
 	}
-	if KEYCLOAK_PASSWORD == "" {
-		KEYCLOAK_PASSWORD = "admin"
+	if KeyCloakPassword == "" {
+		KeyCloakPassword = "admin"
 	}
 }
 
-func findUserById(username string) (*User, error) {
+func findUserByID(username string) (*User, error) {
 	users, err := getUsers()
 
 	if err != nil {
@@ -131,12 +132,12 @@ type usersSpec struct {
 }
 
 func getUsers() (users []User, err error) {
-	resp, err := k.Get(KEYCLOAK_SERVER + "/auth/admin/realms/redhat-external/users?max=2000")
+	resp, err := k.Get(KeyCloakServer + "/auth/admin/realms/redhat-external/users?max=2000")
 	if err != nil {
 		fmt.Printf("\n\n%s\n\n", err.Error())
 	}
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -257,15 +258,19 @@ func main() {
 	oauthClientConfig := clientcredentials.Config{
 		ClientID:       "admin-cli",
 		ClientSecret:   "",
-		TokenURL:       KEYCLOAK_SERVER + "/auth/realms/master/protocol/openid-connect/token",
-		EndpointParams: url.Values{"grant_type": {"password"}, "username": {KEYCLOAK_USERNAME}, "password": {KEYCLOAK_PASSWORD}},
+		TokenURL:       KeyCloakServer + "/auth/realms/master/protocol/openid-connect/token",
+		EndpointParams: url.Values{"grant_type": {"password"}, "username": {KeyCloakUsername}, "password": {KeyCloakPassword}},
 	}
 
 	k = oauthClientConfig.Client(context.Background())
 
 	http.HandleFunc("/", mainHandler)
+	server := http.Server{
+		Addr:              ":8090",
+		ReadHeaderTimeout: 2 * time.Second,
+	}
 
-	if err := http.ListenAndServe(":8090", nil); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Error(err, "CouldNotStart", "reason", "server couldn't start")
 	}
 }
