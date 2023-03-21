@@ -1,0 +1,25 @@
+services:
+  mocktitlements:
+    image: quay.io/cloudservices/mocktitlements:${MBOP_IMAGE_TAG:-latest}
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8090"
+    environment:
+      KEYCLOAK_SERVER: http://keycloak:8080
+      KEYCLOAK_USERNAME: admin
+      KEYCLOAK_PASSWORD: change_me
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG:-15.0.2}
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: change_me
+      KEYCLOAK_IMPORT: /opt/keycloak/data/import/redhat-external-realm.json
+    volumes:
+      - type: bind
+        source: ${PWD}/test/data/redhat-external-realm.json
+        target: /opt/keycloak/data/import/redhat-external-realm.json${SELINUX_LABEL}
