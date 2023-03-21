@@ -110,7 +110,7 @@ func findUserByID(username string) (*User, error) {
 	return nil, fmt.Errorf("User is not known")
 }
 
-func getUser(w http.ResponseWriter, r *http.Request) (*User, error) {
+func getUser(_ http.ResponseWriter, r *http.Request) (*User, error) {
 	userObj, err := getUserFromIdentity(r)
 
 	if err != nil {
@@ -119,7 +119,7 @@ func getUser(w http.ResponseWriter, r *http.Request) (*User, error) {
 	return userObj, nil
 }
 
-func statusHandler(w http.ResponseWriter, r *http.Request) {
+func statusHandler(_ http.ResponseWriter, _ *http.Request) {
 }
 
 type usersSpec struct {
