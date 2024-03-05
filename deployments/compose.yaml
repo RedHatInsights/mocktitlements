@@ -8,18 +8,35 @@ services:
       - "8090:8090"
     environment:
       KEYCLOAK_SERVER: http://keycloak:8080
-      KEYCLOAK_USERNAME: admin
-      KEYCLOAK_PASSWORD: change_me
+      KEYCLOAK_USERNAME: username
+      KEYCLOAK_PASSWORD: password
 
   keycloak:
-    image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG:-15.0.2}
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG:-23.0.5}
     ports:
       - "8080:8080"
+    command: ["start", "--import-realm", "--hostname-strict", "false", "--http-enabled", "true", "--http-relative-path", "/auth", "--health-enabled", "true", "--metrics-enabled", "true"]
     environment:
-      KEYCLOAK_USER: admin
-      KEYCLOAK_PASSWORD: change_me
-      KEYCLOAK_IMPORT: /opt/keycloak/data/import/redhat-external-realm.json
+      KEYCLOAK_ADMIN: username
+      KEYCLOAK_ADMIN_PASSWORD: password
+      KEYCLOAK_IMPORT: /json/redhat-external-realm.json
+      KC_DB_URL_HOST: postgres
+      KC_DB_PASSWORD: change_me
+      KC_DB_USERNAME: admin
+      KC_DB_URL_DATABASE: test_db
+      KC_DB: "postgres"
+      KC_DB_URL_PORT: "5432"
+      PROXY_ADDRESS_FORWARDING: "true"
     volumes:
       - type: bind
         source: ${PWD}/test/data/redhat-external-realm.json
         target: /opt/keycloak/data/import/redhat-external-realm.json${SELINUX_LABEL}
+
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: change_me
+      POSTGRES_USER: admin
+      POSTGRES_DB: test_db
