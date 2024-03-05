@@ -252,7 +252,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	case r.URL.Path == "/api/entitlements/v1/compliance":
 		compliance(w, r)
 	case r.URL.Path == "/auth/realms/redhat-external/apis/service_accounts/v1":
-		sa.ServiceAccountHandler(w, r)
+		sa.ServiceAccountHandler(w, r, k)
 	}
 }
 
