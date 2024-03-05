@@ -19,6 +19,8 @@ import (
 	"go.uber.org/zap"
 
 	"golang.org/x/oauth2/clientcredentials"
+
+	sa "github.com/RedHatInsights/mocktitlements/serviceaccounts"
 )
 
 var log logr.Logger
@@ -240,29 +242,6 @@ func compliance(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "\"result\": \"OK\"\n\"description\":\"\" ")
 }
 
-func getServiceAccounts(w http.ResponseWriter, r *http.Request) {
-	log.Info(fmt.Sprintf("%v\n", r))
-	resp, err := k.Get(KeyCloakServer + "/auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=100")
-	if err != nil {
-		fmt.Printf("\n\n%s\n\n", err.Error())
-	}
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-	}
-
-	log.Info(fmt.Sprintf("%s\n", data))
-}
-
-func serviceAccountHandler(w http.ResponseWriter, r *http.Request) {
-	switch {
-	case r.Method == "GET":
-		log.Info(fmt.Sprintf("%v\n", r))
-		getServiceAccounts(w, r)
-	}
-
-}
-
 func mainHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info(fmt.Sprintf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL))
 	switch {
@@ -273,7 +252,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	case r.URL.Path == "/api/entitlements/v1/compliance":
 		compliance(w, r)
 	case r.URL.Path == "/auth/realms/redhat-external/apis/service_accounts/v1":
-		serviceAccountHandler(w, r)
+		sa.ServiceAccountHandler(w, r)
 	}
 }
 
