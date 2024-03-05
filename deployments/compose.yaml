@@ -8,8 +8,8 @@ services:
       - "8090:8090"
     environment:
       KEYCLOAK_SERVER: http://keycloak:8080
-      KEYCLOAK_USERNAME: username
-      KEYCLOAK_PASSWORD: password
+      KEYCLOAK_USERNAME: admin
+      KEYCLOAK_PASSWORD: change_me
 
   keycloak:
     image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG:-23.0.5}
@@ -17,8 +17,8 @@ services:
       - "8080:8080"
     command: ["start", "--import-realm", "--hostname-strict", "false", "--http-enabled", "true", "--http-relative-path", "/auth", "--health-enabled", "true", "--metrics-enabled", "true"]
     environment:
-      KEYCLOAK_ADMIN: username
-      KEYCLOAK_ADMIN_PASSWORD: password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: change_me
       KEYCLOAK_IMPORT: /json/redhat-external-realm.json
       KC_DB_URL_HOST: postgres
       KC_DB_PASSWORD: change_me
