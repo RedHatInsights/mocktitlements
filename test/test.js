@@ -108,3 +108,15 @@ describe('/POST /api/entitlements/v1/compliance',() => {
         });
     });
 });
+
+
+describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1',() => {
+    it('should return 200', (done) => {
+        chai.request(url)
+            .get('/auth/realms/redhat-external/apis/service_accounts/v1')
+            .end((err,res) => {
+                res.should.have.status(200);
+            done();
+        });
+    });
+});
