@@ -18,6 +18,9 @@ let jdoeUser = {
 
 let xrhid= {"identity": {"type": "User", "account_number": "0000001", "org_id": "000001", "user": {"username": "jdoe"}, "internal": {"org_id": "000001"}}};
 let xrhidb64= Buffer.from(JSON.stringify(xrhid)).toString('base64');
+
+let serviceAccount = {"name":"abcde","description":"afasdf"}
+
 /*
  * Test / route
  */
@@ -104,6 +107,36 @@ describe('/POST /api/entitlements/v1/compliance',() => {
                 console.log(res.text)
                 res.should.have.status(200);
                 res.text.should.contain("OK")
+            done();
+        });
+    });
+});
+
+describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=2',() => {
+    it("should get a list of service accounts", (done) => {
+        chai.request(url)
+            .get('/auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=2&org_id=12345')
+            .end((err,res) => {
+                console.log("rt")
+                console.log(res.text)
+                res.should.have.status(200);
+                JSON_response = JSON.parse(res.text);
+                expect(Object.values(JSON_response).length).eq(2);
+            done();
+        });
+    });
+});
+
+describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
+    it("should create a client and return the secret", (done) => {
+        chai.request(url)
+            .post('/auth/realms/redhat-external/apis/service_accounts/v1')
+            .send(serviceAccount)
+            .end((err,res) => {
+                console.log(res.text)
+                res.should.have.status(201);
+                JSON_response = JSON.parse(res.text);
+                expect(JSON_response['name']).eq("abcde");
             done();
         });
     });

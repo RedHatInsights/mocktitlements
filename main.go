@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -18,12 +15,12 @@ import (
 	"github.com/redhatinsights/platform-go-middlewares/identity"
 	"go.uber.org/zap"
 
-	"golang.org/x/oauth2/clientcredentials"
-
+	"github.com/RedHatInsights/mocktitlements/keycloak"
 	sa "github.com/RedHatInsights/mocktitlements/serviceaccounts"
 )
 
 var log logr.Logger
+var kc *keycloak.Instance
 
 func init() {
 
@@ -81,22 +78,6 @@ type User struct {
 	Entitlements  string `json:"entitlements"`
 }
 
-var KeyCloakServer string
-var KeyCloakUsername string
-var KeyCloakPassword string
-
-func init() {
-	KeyCloakServer = os.Getenv("KEYCLOAK_SERVER")
-	KeyCloakUsername = os.Getenv("KEYCLOAK_USERNAME")
-	KeyCloakPassword = os.Getenv("KEYCLOAK_PASSWORD")
-	if KeyCloakUsername == "" {
-		KeyCloakUsername = "admin"
-	}
-	if KeyCloakPassword == "" {
-		KeyCloakPassword = "admin"
-	}
-}
-
 func findUserByID(username string) (*User, error) {
 	users, err := getUsers()
 
@@ -124,17 +105,8 @@ func getUser(_ http.ResponseWriter, r *http.Request) (*User, error) {
 func statusHandler(_ http.ResponseWriter, _ *http.Request) {
 }
 
-type usersSpec struct {
-	Username   string              `json:"username"`
-	Enabled    bool                `json:"enabled"`
-	FirstName  string              `json:"firstName"`
-	LastName   string              `json:"lastName"`
-	Email      string              `json:"email"`
-	Attributes map[string][]string `json:"attributes"`
-}
-
 func getUsers() (users []User, err error) {
-	resp, err := k.Get(KeyCloakServer + "/auth/admin/realms/redhat-external/users?max=2000")
+	resp, err := kc.Client.Get(kc.URL + "/auth/admin/realms/redhat-external/users?max=2000")
 	if err != nil {
 		fmt.Printf("\n\n%s\n\n", err.Error())
 	}
@@ -148,7 +120,7 @@ func getUsers() (users []User, err error) {
 }
 
 func parseUsers(data []byte) ([]User, error) {
-	obj := &[]usersSpec{}
+	obj := &[]keycloak.UsersSpec{}
 
 	err := json.Unmarshal(data, obj)
 
@@ -251,23 +223,13 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		entitlements(w, r)
 	case r.URL.Path == "/api/entitlements/v1/compliance":
 		compliance(w, r)
-	case r.URL.Path == "/auth/realms/redhat-external/apis/service_accounts/v1":
-		sa.ServiceAccountHandler(w, r, k)
+	case strings.Contains(r.URL.Path, "/auth/realms/redhat-external/apis/service_accounts/v1"):
+		sa.ServiceAccountHandler(w, r, kc)
 	}
 }
 
-var k *http.Client
-
 func main() {
-	oauthClientConfig := clientcredentials.Config{
-		ClientID:       "admin-cli",
-		ClientSecret:   "",
-		TokenURL:       KeyCloakServer + "/auth/realms/master/protocol/openid-connect/token",
-		EndpointParams: url.Values{"grant_type": {"password"}, "username": {KeyCloakUsername}, "password": {KeyCloakPassword}},
-	}
-
-	k = oauthClientConfig.Client(context.Background())
-
+	kc = keycloak.GetKeycloakInstance()
 	http.HandleFunc("/", mainHandler)
 	server := http.Server{
 		Addr:              ":8090",
