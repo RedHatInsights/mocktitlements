@@ -97,7 +97,25 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 	w.WriteHeader(http.StatusOK)
 }
 
-func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
+func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
+	log.Info(fmt.Sprintf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL))
+	
+	body := strings.NewReader("")
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/3d6855ba-b48c-4c10-ae92-fbe909a36c24", kc.URL), body)
+	if err != nil {
+		return fmt.Errorf("couldn't create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	_, err = kc.Client.Do(req)
+	if err != nil {
+		return fmt.Errorf("couldn't do delete: %w", err)
+	}
+
+	log.Info("successfully deleted service account [5d0b0422-5974-4152-9e29-4866820a1990]")
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
 func CreateServiceAccount(clientName, orgID string, kc *keycloak.Instance) (*keycloak.ClientObject, error) {

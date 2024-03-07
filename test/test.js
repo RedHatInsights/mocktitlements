@@ -142,3 +142,15 @@ describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max
         });
     });
 });
+
+// Test deleteServiceAccount function
+describe('/DELETE /auth/realms/redhat-external/apis/service_accounts/v1/:ClientId',() => {
+    it("should get a list of service accounts", (done) => {
+        chai.request(url)
+            .delete('/auth/realms/redhat-external/apis/service_accounts/v1/v3d36f6a6-d34a-4086-b205-7e9d82600f62')
+            .end((err,res) => {
+                res.should.have.status(204);
+            done();
+        });
+    });
+});
