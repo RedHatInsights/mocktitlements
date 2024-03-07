@@ -147,7 +147,7 @@ describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max
 describe('/DELETE /auth/realms/redhat-external/apis/service_accounts/v1/:ClientId',() => {
     it("should get a list of service accounts", (done) => {
         chai.request(url)
-            .delete('/auth/realms/redhat-external/apis/service_accounts/v1/v3d36f6a6-d34a-4086-b205-7e9d82600f62')
+            .delete('/auth/realms/redhat-external/apis/service_accounts/v1/d0e03e99-28c9-40f5-9f7b-09cd027f35af')
             .end((err,res) => {
                 res.should.have.status(204);
             done();
