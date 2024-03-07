@@ -26,9 +26,9 @@ type UsersSpec struct {
 
 // GetKeycloakInstance returns an instance of the keycloak instance with client + host
 func GetKeycloakInstance() *Instance {
-	keyCloakServer = os.Getenv("KEYCLOAK_SERVER")
-	keyCloakUsername = os.Getenv("KEYCLOAK_USERNAME")
-	keyCloakPassword = os.Getenv("KEYCLOAK_PASSWORD")
+	keyCloakServer := os.Getenv("KEYCLOAK_SERVER")
+	keyCloakUsername := os.Getenv("KEYCLOAK_USERNAME")
+	keyCloakPassword := os.Getenv("KEYCLOAK_PASSWORD")
 	if keyCloakUsername == "" {
 		keyCloakUsername = "admin"
 	}
