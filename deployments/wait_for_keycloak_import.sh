@@ -3,7 +3,7 @@
 COMPOSE_FILE="$1"
 CONTAINER_NAME="keycloak"
 COMPOSE_COMMAND=""
-SUCCESS_LOG_ENTRY="Keycloak.*started in \d+ms"
+SUCCESS_LOG_ENTRY="Import finished successfully"
 START_SECONDS="$SECONDS"
 TIMEOUT="60"
 
