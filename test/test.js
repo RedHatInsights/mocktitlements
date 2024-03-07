@@ -149,6 +149,22 @@ describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max
 
 // Test deleteServiceAccount functionality
 describe('/DELETE /auth/admin/realms/redhat-external/clients/:ClientId',() => {
+    it("should create a client to be deleted", (done) => {
+        let serviceAccount = {"name":"test_service_account","description":"this should get deleted"}
+
+        chai.request(url)
+            .post('/auth/realms/redhat-external/apis/service_accounts/v1')
+            .send(serviceAccount)
+            .end((err,res) => {
+                console.log("TESTING " + res.text)
+                res.should.have.status(201);
+                JSON_response = JSON.parse(res.text);
+                expect(JSON_response['clientId']).eq("test_service_account");
+                expect(JSON_response['id']).not().null();
+            done();
+        });
+    });
+
     it("deletes newly created Keycloak service account", (done) => {
         chai.request(url)
             .delete('/auth/admin/realms/redhat-external/clients/da646fe7-8586-4202-8a2d-49c549f11d14')
