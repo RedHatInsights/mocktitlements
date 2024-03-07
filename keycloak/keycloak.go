@@ -24,6 +24,12 @@ type UsersSpec struct {
 	Attributes map[string][]string `json:"attributes"`
 }
 
+type ClientObject struct {
+	ClientID string `json:"clientId"`
+	Name     string `json:"name"`
+	ID       string `json:"id"`
+}
+
 // GetKeycloakInstance returns an instance of the keycloak instance with client + host
 func GetKeycloakInstance() *Instance {
 	keyCloakServer := os.Getenv("KEYCLOAK_SERVER")
