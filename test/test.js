@@ -121,8 +121,8 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
                 console.log(res.text)
                 res.should.have.status(201);
                 JSON_response = JSON.parse(res.text);
-                expect(JSON_response['name']).eq("abcdef");
-                expect(JSON_response['clientId']).not().null();
+                expect(JSON_response['clientId']).eq("abcdef");
+                expect(JSON_response['id']).not().null();
             done();
         });
     });

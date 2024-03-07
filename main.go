@@ -229,7 +229,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	kc = keycloak.GetKeycloakInstance()
+	kc = keycloak.GetKeycloakInstance(log)
 	http.HandleFunc("/", mainHandler)
 	server := http.Server{
 		Addr:              ":8090",
