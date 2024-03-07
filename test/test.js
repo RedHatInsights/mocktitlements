@@ -19,9 +19,6 @@ let jdoeUser = {
 let xrhid= {"identity": {"type": "User", "account_number": "0000001", "org_id": "000001", "user": {"username": "jdoe"}, "internal": {"org_id": "000001"}}};
 let xrhidb64= Buffer.from(JSON.stringify(xrhid)).toString('base64');
 
-
-
-
 /*
  * Test / route
  */
