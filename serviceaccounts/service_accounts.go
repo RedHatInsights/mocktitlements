@@ -102,7 +102,7 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	kc.Log.Info(fmt.Sprintf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL))
 	
 	body := strings.NewReader("")
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/d0e03e99-28c9-40f5-9f7b-09cd027f35af", kc.URL), body)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s%s", kc.URL, r.URL), body)
 	if err != nil {
 		return fmt.Errorf("couldn't create request: %w", err)
 	}

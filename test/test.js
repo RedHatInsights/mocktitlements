@@ -19,7 +19,8 @@ let jdoeUser = {
 let xrhid= {"identity": {"type": "User", "account_number": "0000001", "org_id": "000001", "user": {"username": "jdoe"}, "internal": {"org_id": "000001"}}};
 let xrhidb64= Buffer.from(JSON.stringify(xrhid)).toString('base64');
 
-let serviceAccount = {"name":"abcde","description":"afasdf"}
+
+
 
 /*
  * Test / route
@@ -114,6 +115,8 @@ describe('/POST /api/entitlements/v1/compliance',() => {
 
 describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
     it("should create a client and return the secret", (done) => {
+        let serviceAccount = {"name":"abcde","description":"afasdf"}
+
         chai.request(url)
             .post('/auth/realms/redhat-external/apis/service_accounts/v1')
             .send(serviceAccount)
@@ -121,7 +124,7 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
                 console.log(res.text)
                 res.should.have.status(201);
                 JSON_response = JSON.parse(res.text);
-                expect(JSON_response['clientId']).eq("abcdef");
+                expect(JSON_response['clientId']).eq("abcde");
                 expect(JSON_response['id']).not().null();
             done();
         });
@@ -137,17 +140,18 @@ describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max
                 console.log(res.text)
                 res.should.have.status(200);
                 JSON_response = JSON.parse(res.text);
+                console.log(JSON_response)
                 expect(Object.values(JSON_response).length).eq(2);
             done();
         });
     });
 });
 
-// Test deleteServiceAccount function
-describe('/DELETE /auth/realms/redhat-external/apis/service_accounts/v1/:ClientId',() => {
-    it("should get a list of service accounts", (done) => {
+// Test deleteServiceAccount functionality
+describe('/DELETE /auth/admin/realms/redhat-external/clients/:ClientId',() => {
+    it("deletes newly created Keycloak service account", (done) => {
         chai.request(url)
-            .delete('/auth/realms/redhat-external/apis/service_accounts/v1/d0e03e99-28c9-40f5-9f7b-09cd027f35af')
+            .delete('/auth/admin/realms/redhat-external/clients/da646fe7-8586-4202-8a2d-49c549f11d14')
             .end((err,res) => {
                 res.should.have.status(204);
             done();

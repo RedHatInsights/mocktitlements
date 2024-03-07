@@ -223,7 +223,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		entitlements(w, r)
 	case r.URL.Path == "/api/entitlements/v1/compliance":
 		compliance(w, r)
-	case strings.Contains(r.URL.Path, "/auth/realms/redhat-external/apis/service_accounts/v1"):
+	case strings.Contains(r.URL.Path, "/auth/"):
 		sa.ServiceAccountHandler(w, r, kc)
 	}
 }
