@@ -19,7 +19,7 @@ type ServiceAccount struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	CreatedBy   string `json:"createdBy"`
-	CreatedAt   string `json:"createdAt"`
+	CreatedAt   int64  `json:"createdAt"`
 }
 
 type serviceAccountInput struct {
@@ -131,7 +131,7 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 			Name:        user.Username,
 			Description: "",
 			CreatedBy:   "",
-			CreatedAt:   "",
+			CreatedAt:   user.CreatedTimestamp,
 		})
 	}
 

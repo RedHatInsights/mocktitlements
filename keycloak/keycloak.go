@@ -23,12 +23,13 @@ type Instance struct {
 }
 
 type UsersSpec struct {
-	Username   string              `json:"username"`
-	Enabled    bool                `json:"enabled"`
-	FirstName  string              `json:"firstName"`
-	LastName   string              `json:"lastName"`
-	Email      string              `json:"email"`
-	Attributes map[string][]string `json:"attributes"`
+	Username         string              `json:"username"`
+	Enabled          bool                `json:"enabled"`
+	FirstName        string              `json:"firstName"`
+	LastName         string              `json:"lastName"`
+	Email            string              `json:"email"`
+	Attributes       map[string][]string `json:"attributes"`
+	CreatedTimestamp int64               `json:"createdTimestamp"`
 }
 
 type ClientObject struct {
