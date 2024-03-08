@@ -26,34 +26,40 @@ type serviceAccountInput struct {
 }
 
 func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
+	var err error
 	switch {
 	case r.Method == "GET":
 		kc.Log.Info(fmt.Sprintf("query params: %s", r.URL.Query()))
-		getServiceAccounts(w, r, kc)
+		err = getServiceAccounts(w, r, kc)
 	case r.Method == "POST":
-		createServiceAccount(w, r, kc)
+		err = createServiceAccount(w, r, kc)
 	case r.Method == "DELETE":
-		_ = deleteServiceAccount(w, r, kc)
+		err = deleteServiceAccount(w, r, kc)
+	}
+	if err != nil {
+		errString := fmt.Sprintf("%s", err)
+		kc.Log.Error(err, "error running function: ")
+		http.Error(w, errString, http.StatusInternalServerError)
 	}
 }
 
-func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
+func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
 	var saUser serviceAccountInput
 
 	defer r.Body.Close()
 
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		kc.Log.Error(err, "cannot read response body")
+		return fmt.Errorf("cannot read response body: %w", err)
 	}
 
 	if err := json.Unmarshal(b, &saUser); err != nil {
-		kc.Log.Error(err, "cannot unmarshal response body")
+		return fmt.Errorf("cannot unmarshal response body: %w", err)
 	}
 
 	clientObject, err := CreateServiceAccount(saUser.Name, "12345", kc)
 	if err != nil {
-		kc.Log.Error(err, "bad error")
+		return fmt.Errorf("bad error: %w", err)
 	}
 
 	outputStruct := ServiceAccount{
@@ -63,19 +69,20 @@ func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 
 	outputBytes, err := json.Marshal(outputStruct)
 	if err != nil {
-		kc.Log.Error(err, "There was an error constructing the JSON output object")
+		return fmt.Errorf("there was an error constructing the JSON output object: %w", err)
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprint(w, string(outputBytes))
+	return nil
 }
 
-func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
+func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
 	var serviceAccountList []ServiceAccount
 
-	users, err := kc.GetServiceAccountQuery("org_id:" + r.URL.Query().Get("org_id") + " AND boss:true")
+	users, err := kc.GetServiceAccountQuery("org_id:" + r.URL.Query().Get("org_id") + " AND service_account:true")
 	if err != nil {
-		kc.Log.Error(err, "couldn't get service account")
+		return fmt.Errorf("couldn't get service account: %w", err)
 	}
 
 	for _, user := range users {
@@ -92,10 +99,10 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 
 	outputUsers, err := json.Marshal(serviceAccountList)
 	if err != nil {
-		kc.Log.Error(err, "couldn't marshal serviceAccountList")
+		return fmt.Errorf("couldn't marshal serviceAccountList: %w", err)
 	}
 	fmt.Fprint(w, string(outputUsers))
-	w.WriteHeader(http.StatusOK)
+	return nil
 }
 
 func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
@@ -114,7 +121,7 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	}
 	defer resp.Body.Close()
 
-	kc.Log.Info("successfully deleted service account [5d0b0422-5974-4152-9e29-4866820a1990]")
+	kc.Log.Info(fmt.Sprintf("%v", resp))
 
 	w.WriteHeader(http.StatusNoContent)
 	return nil
@@ -132,9 +139,28 @@ func CreateServiceAccount(clientName, orgID string, kc *keycloak.Instance) (*key
 		return &keycloak.ClientObject{}, fmt.Errorf("could not find client: %w", err)
 	}
 
-	err = kc.CreateMapper(foundClient.ID)
+	err = kc.CreateMapper(foundClient.ID, "org_id", "String")
 	if err != nil {
-		return &keycloak.ClientObject{}, fmt.Errorf("could not create mapper: %w", err)
+		return &keycloak.ClientObject{}, fmt.Errorf("could not create org_id mapper: %w", err)
+	}
+	err = kc.CreateMapper(foundClient.ID, "service_account", "String")
+	if err != nil {
+		return &keycloak.ClientObject{}, fmt.Errorf("could not create service_accounts mapper: %w", err)
+	}
+
+	foundServiceAccount, err := kc.GetServiceUser(foundClient.ID)
+	if err != nil {
+		return &keycloak.ClientObject{}, fmt.Errorf("could not find clients service account: %w", err)
+	}
+
+	attrs := map[string]string{
+		"org_id":          orgID,
+		"service_account": "true",
+	}
+
+	err = kc.AddServiceAccountAttributes(attrs, foundServiceAccount.ID)
+	if err != nil {
+		return &keycloak.ClientObject{}, fmt.Errorf("unable to add attributes: %w", err)
 	}
 
 	return &foundClient, nil

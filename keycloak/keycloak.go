@@ -37,6 +37,11 @@ type ClientObject struct {
 	ID       string `json:"id"`
 }
 
+type ServiceAccountUser struct {
+	Username string `json:"username"`
+	ID       string `json:"id"`
+}
+
 type attributes struct {
 	Oauth2       bool   `json:"oauth2.device.authorization.grant.enabled"`
 	GrantEnabled bool   `json:"oidc.ciba.grant.enabled"`
@@ -212,8 +217,8 @@ func (kc *Instance) GetClient(clientName string) (ClientObject, error) {
 	return foundClient, nil
 }
 
-func (kc *Instance) CreateMapper(id string) error {
-	mapperObj := createMapper("org_id", "String")
+func (kc *Instance) CreateMapper(id, attributeName, attributeType string) error {
+	mapperObj := createMapper(attributeName, attributeType)
 
 	b, err := json.Marshal(mapperObj)
 	kc.Log.Info(string(b))
@@ -301,4 +306,74 @@ func (kc *Instance) GetServiceAccountQuery(queryString string) ([]UsersSpec, err
 	}
 
 	return *obj, nil
+}
+
+func (kc *Instance) GetServiceUser(clientID string) (*ServiceAccountUser, error) {
+	resp, err := kc.Client.Get(fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s/service-account-user", kc.URL, clientID))
+	if err != nil {
+		kc.Log.Error(err, "could not get service account user")
+		return &ServiceAccountUser{}, fmt.Errorf("couldn't get service account user: %w", err)
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return &ServiceAccountUser{}, fmt.Errorf("couldn't read body data: %w", err)
+	}
+
+	obj := &ServiceAccountUser{}
+	err = json.Unmarshal(data, obj)
+	if err != nil {
+		return &ServiceAccountUser{}, fmt.Errorf("couldn't read body data: %w", err)
+	}
+	return obj, nil
+}
+
+type AttributesRequest struct {
+	Attributes map[string][]string `json:"attributes"`
+}
+
+func (kc *Instance) AddServiceAccountAttributes(attrs map[string]string, id string) error {
+
+	kcURL, err := url.Parse(kc.URL)
+	if err != nil {
+		return fmt.Errorf("couldn't parse keycloak url: %w", err)
+	}
+
+	murl := url.URL{
+		Scheme: kcURL.Scheme,
+		Host:   kcURL.Host,
+		Path:   fmt.Sprintf("auth/admin/realms/redhat-external/users/%s", id),
+	}
+
+	attributes := AttributesRequest{
+		Attributes: map[string][]string{},
+	}
+
+	for k, v := range attrs {
+		attributes.Attributes[k] = []string{v}
+	}
+
+	requestBytes, err := json.Marshal(attributes)
+	if err != nil {
+		return fmt.Errorf("couldn't create attributes request: %w", err)
+	}
+
+	re := strings.NewReader(string(requestBytes))
+
+	req, err := http.NewRequest("PUT", murl.String(), re)
+	if err != nil {
+		return fmt.Errorf("couldn't create request: %w", err)
+	}
+
+	kc.Log.Info(fmt.Sprintf("%v", req))
+	resp, err := kc.Client.Do(req)
+
+	if err != nil {
+		return fmt.Errorf("couldn't do request: %w", err)
+	}
+
+	kc.Log.Info(fmt.Sprintf("%v", resp))
+	defer resp.Body.Close()
+
+	return nil
 }
