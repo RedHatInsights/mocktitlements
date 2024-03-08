@@ -116,6 +116,7 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
 
         chai.request(url)
             .post('/auth/realms/redhat-external/apis/service_accounts/v1')
+            .set("x-rh-identity", xrhidb64)
             .send(serviceAccount)
             .end((err,res) => {
                 console.log(res.text)
@@ -131,7 +132,8 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
 describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=2',() => {
     it("should get a list of service accounts", (done) => {
         chai.request(url)
-            .get('/auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=2&org_id=12345')
+            .get('/auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=2')
+            .set("x-rh-identity", xrhidb64)
             .end((err,res) => {
                 console.log("rt")
                 console.log(res.text)
@@ -153,6 +155,7 @@ describe('/DELETE /auth/admin/realms/redhat-external/clients/:ClientId',() => {
 
         chai.request(url)
             .post('/auth/realms/redhat-external/apis/service_accounts/v1')
+            .set("x-rh-identity", xrhidb64)
             .send(serviceAccount)
             .end((err,res) => {
                 console.log("TESTING " + res.text)
@@ -161,7 +164,6 @@ describe('/DELETE /auth/admin/realms/redhat-external/clients/:ClientId',() => {
                 expect(JSON_response['name']).eq("test_service_account");
                 expect(JSON_response['clientId']).not.null;
                 id = JSON_response['clientId'];
-                console.log("++++" + id)
             done();
         });
     });
@@ -170,6 +172,7 @@ describe('/DELETE /auth/admin/realms/redhat-external/clients/:ClientId',() => {
         console.log(id)
         chai.request(url)
             .delete('/auth/admin/realms/redhat-external/clients/' + id)
+            .set("x-rh-identity", xrhidb64)
             .end((err,res) => {
                 res.should.have.status(204);
             done();

@@ -1,6 +1,7 @@
 package serviceaccounts
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/RedHatInsights/mocktitlements/keycloak"
+	"github.com/redhatinsights/platform-go-middlewares/identity"
 )
 
 type ServiceAccount struct {
@@ -27,6 +29,7 @@ type serviceAccountInput struct {
 
 func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
 	var err error
+
 	switch {
 	case r.Method == "GET":
 		kc.Log.Info(fmt.Sprintf("query params: %s", r.URL.Query()))
@@ -46,6 +49,11 @@ func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.
 func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
 	var saUser serviceAccountInput
 
+	orgID, err := getOrgID(r)
+	if err != nil {
+		return fmt.Errorf("couldn't get orgid: %w", err)
+	}
+
 	defer r.Body.Close()
 
 	b, err := io.ReadAll(r.Body)
@@ -57,7 +65,7 @@ func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 		return fmt.Errorf("cannot unmarshal response body: %w", err)
 	}
 
-	clientObject, err := CreateServiceAccount(saUser.Name, "12345", kc)
+	clientObject, err := CreateServiceAccount(saUser.Name, orgID, kc)
 	if err != nil {
 		return fmt.Errorf("bad error: %w", err)
 	}
@@ -78,10 +86,33 @@ func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	return nil
 }
 
+func getOrgID(r *http.Request) (string, error) {
+	xrhid := r.Header.Get("x-rh-identity")
+	output, err := base64.StdEncoding.DecodeString(xrhid)
+
+	if err != nil {
+		return "", fmt.Errorf("error obtaining xrhid: %w", err)
+	}
+
+	xrhidObject := &identity.XRHID{}
+	err = json.Unmarshal(output, xrhidObject)
+
+	if err != nil {
+		return "", fmt.Errorf("error unmarshalling xrhid: %w", err)
+	}
+
+	return xrhidObject.Identity.Internal.OrgID, nil
+}
+
 func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
 	var serviceAccountList []ServiceAccount
 
-	users, err := kc.GetServiceAccountQuery("org_id:" + r.URL.Query().Get("org_id") + " AND service_account:true")
+	orgID, err := getOrgID(r)
+	if err != nil {
+		return fmt.Errorf("couldn't get orgid: %w", err)
+	}
+
+	users, err := kc.GetServiceAccountQuery("org_id:" + orgID + " AND service_account:true")
 	if err != nil {
 		return fmt.Errorf("couldn't get service account: %w", err)
 	}
