@@ -1,11 +1,11 @@
 package serviceaccounts
 
 import (
-	"strings"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/RedHatInsights/mocktitlements/keycloak"
 )
@@ -33,7 +33,7 @@ func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.
 	case r.Method == "POST":
 		createServiceAccount(w, r, kc)
 	case r.Method == "DELETE":
-		deleteServiceAccount(w, r, kc)
+		_ = deleteServiceAccount(w, r, kc)
 	}
 }
 
@@ -100,7 +100,7 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 
 func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
 	kc.Log.Info(fmt.Sprintf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL))
-	
+
 	body := strings.NewReader("")
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s%s", kc.URL, r.URL), body)
 	if err != nil {
@@ -108,10 +108,11 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	}
 
 	req.Header.Add("Content-Type", "application/json")
-	_, err = kc.Client.Do(req)
+	resp, err := kc.Client.Do(req)
 	if err != nil {
 		return fmt.Errorf("couldn't do delete: %w", err)
 	}
+	defer resp.Body.Close()
 
 	kc.Log.Info("successfully deleted service account [5d0b0422-5974-4152-9e29-4866820a1990]")
 
@@ -121,7 +122,7 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 
 func CreateServiceAccount(clientName, orgID string, kc *keycloak.Instance) (*keycloak.ClientObject, error) {
 
-	err := kc.CreateClient(clientName)
+	err := kc.CreateClient(clientName, orgID)
 	if err != nil {
 		return &keycloak.ClientObject{}, fmt.Errorf("could not create client: %w", err)
 	}

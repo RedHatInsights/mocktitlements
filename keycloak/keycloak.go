@@ -40,11 +40,11 @@ type ClientObject struct {
 type attributes struct {
 	Oauth2       bool   `json:"oauth2.device.authorization.grant.enabled"`
 	GrantEnabled bool   `json:"oidc.ciba.grant.enabled"`
-	SAML_IDP     string `json:"saml_idp_initiated_sso_url_name"`
+	SamlIdp      string `json:"saml_idp_initiated_sso_url_name"`
 }
 
 type clientStruct struct {
-	ClientId                  string         `json:"clientId"`
+	ClientID                  string         `json:"clientId"`
 	Name                      string         `json:"name"`
 	BearerOnly                bool           `json:"bearerOnly,omitempty"`
 	PublicClient              bool           `json:"publicClient"`
@@ -81,7 +81,7 @@ type mapperStruct struct {
 	Config         mapperConfig `json:"config"`
 }
 
-func createMapper(attr string, mtype string, multi bool) mapperStruct {
+func createMapper(attr string, mtype string) mapperStruct {
 	return mapperStruct{
 		Name:           attr,
 		Protocol:       "openid-connect",
@@ -126,13 +126,13 @@ func GetKeycloakInstance(log logr.Logger) *Instance {
 	return kc
 }
 
-func (kc *Instance) CreateClient(clientName string) error {
+func (kc *Instance) CreateClient(clientName, orgID string) error {
 	postObj := clientStruct{
 		DisplayInConsole:          false,
 		Name:                      "",
 		FrontChannelLogout:        true,
 		AuthServices:              false,
-		ClientId:                  clientName,
+		ClientID:                  clientName,
 		PublicClient:              false,
 		DirectAccessGrantsEnabled: false,
 		StandardFlow:              false,
@@ -142,12 +142,15 @@ func (kc *Instance) CreateClient(clientName string) error {
 		Attributes: attributes{
 			Oauth2:       false,
 			GrantEnabled: false,
-			SAML_IDP:     "",
+			SamlIdp:      "",
 		},
 	}
 
 	b, err := json.Marshal(postObj)
-	kc.Log.Info(fmt.Sprintf("%s", string(b)))
+	kc.Log.Info(string(b))
+
+	// This will go later - just to make linter happy
+	kc.Log.Info(orgID)
 
 	if err != nil {
 		return fmt.Errorf("couldn't marshal post object: %w", err)
@@ -210,7 +213,7 @@ func (kc *Instance) GetClient(clientName string) (ClientObject, error) {
 }
 
 func (kc *Instance) CreateMapper(id string) error {
-	mapperObj := createMapper("org_id", "String", false)
+	mapperObj := createMapper("org_id", "String")
 
 	b, err := json.Marshal(mapperObj)
 	kc.Log.Info(string(b))
