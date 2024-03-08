@@ -110,71 +110,102 @@ describe('/POST /api/entitlements/v1/compliance',() => {
     });
 });
 
+
+// Test createServiceAccount
+let id_1 = "";
+let id_2 = "";
 describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
-    it("should create a client and return the secret", (done) => {
-        let serviceAccount = {"name":"abcde","description":"afasdf"}
+    it("should create a client to be deleted", (done) => {
+        let serviceAccount1 = {"name":"integration_test_sa_1","description":"first integration test service account created"}
 
         chai.request(url)
             .post('/auth/realms/redhat-external/apis/service_accounts/v1')
             .set("x-rh-identity", xrhidb64)
-            .send(serviceAccount)
+            .send(serviceAccount1)
             .end((err,res) => {
-                console.log(res.text)
-                res.should.have.status(201);
                 JSON_response = JSON.parse(res.text);
                 console.log(JSON_response)
 
-                expect(JSON_response['name']).eq("abcde");
+                res.should.have.status(201);
+
+                expect(JSON_response['id']).not.null;
                 expect(JSON_response['clientId']).not.null;
+                expect(JSON_response['secret']).not.null;
+                expect(JSON_response['name']).eq("integration_test_sa_1");
+                expect(JSON_response['description']).eq("first integration test service account created");
+                expect(JSON_response['createdBy']).eq("jdoe");
+                expect(JSON_response['createdAt']).not.null;
+
+                id_1 = JSON_response['clientId'];
+            done();
+        });
+    });
+
+    it("should create a client to be deleted", (done) => {
+        let serviceAccount2 = {"name":"integration_test_sa_2","description":"second integration test service account created"}
+        
+        chai.request(url)
+            .post('/auth/realms/redhat-external/apis/service_accounts/v1')
+            .set("x-rh-identity", xrhidb64)
+            .send(serviceAccount2)
+            .end((err,res) => {
+                JSON_response = JSON.parse(res.text);
+                console.log(JSON_response)
+
+                res.should.have.status(201);
+
+                expect(JSON_response['id']).not.null;
+                expect(JSON_response['clientId']).not.null;
+                expect(JSON_response['secret']).not.null;
+                expect(JSON_response['name']).eq("integration_test_sa_2");
+                expect(JSON_response['description']).eq("second integration test service account created");
+                expect(JSON_response['createdBy']).eq("jdoe");
+                expect(JSON_response['createdAt']).not.null;
+
+                id_2 = JSON_response['clientId'];
             done();
         });
     });
 });
 
+// Test getServiceAccount
 describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=2',() => {
     it("should get a list of service accounts", (done) => {
         chai.request(url)
             .get('/auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=2')
             .set("x-rh-identity", xrhidb64)
             .end((err,res) => {
-                console.log("rt")
-                console.log(res.text)
-                res.should.have.status(200);
                 JSON_response = JSON.parse(res.text);
                 console.log(JSON_response)
 
-                expect(Object.values(JSON_response).length).eq(1);
-                expect(Object.values(JSON_response)['secret']).not.null;
+                res.should.have.status(200);
+
+                expect(Object.values(JSON_response).length).eq(2);
+
+                expect(Object.values(JSON_response)[0]['name']).eq("service-account-integration_test_sa_1");
+                expect(Object.values(JSON_response)[1]['name']).eq("service-account-integration_test_sa_2");
             done();
         });
     });
 });
 
-// Test deleteServiceAccount functionality
+// Test deleteServiceAccount
 describe('/DELETE /auth/admin/realms/redhat-external/clients/:ClientId',() => {
-    let id = "";
-    it("should create a client to be deleted", (done) => {
-        let serviceAccount = {"name":"test_service_account","description":"this should get deleted"}
-
+    it("deletes newly created Keycloak service account", (done) => {
+        console.log(id_1)
         chai.request(url)
-            .post('/auth/realms/redhat-external/apis/service_accounts/v1')
+            .delete('/auth/admin/realms/redhat-external/clients/' + id_1)
             .set("x-rh-identity", xrhidb64)
-            .send(serviceAccount)
             .end((err,res) => {
-                console.log("TESTING " + res.text)
-                res.should.have.status(201);
-                JSON_response = JSON.parse(res.text);
-                expect(JSON_response['name']).eq("test_service_account");
-                expect(JSON_response['clientId']).not.null;
-                id = JSON_response['clientId'];
+                res.should.have.status(204);
             done();
         });
     });
 
     it("deletes newly created Keycloak service account", (done) => {
-        console.log(id)
+        console.log(id_2)
         chai.request(url)
-            .delete('/auth/admin/realms/redhat-external/clients/' + id)
+            .delete('/auth/admin/realms/redhat-external/clients/' + id_2)
             .set("x-rh-identity", xrhidb64)
             .end((err,res) => {
                 res.should.have.status(204);
