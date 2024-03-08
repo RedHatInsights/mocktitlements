@@ -65,6 +65,7 @@ func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	outputStruct := ServiceAccount{
 		Name:     clientObject.Name,
 		ClientID: clientObject.ClientID,
+		Secret:   clientObject.Secret,
 	}
 
 	outputBytes, err := json.Marshal(outputStruct)
@@ -86,10 +87,16 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 	}
 
 	for _, user := range users {
+
+		secret, err := kc.GetClientSecret(user.Attributes["client_id"][0])
+		if err != nil {
+			return fmt.Errorf("unable to get client secrets: %w", err)
+		}
+
 		serviceAccountList = append(serviceAccountList, ServiceAccount{
 			ID:          "",
-			ClientID:    "",
-			Secret:      "",
+			ClientID:    user.Attributes["client_id"][0],
+			Secret:      secret,
 			Name:        user.Username,
 			Description: "",
 			CreatedBy:   "",
@@ -134,21 +141,28 @@ func CreateServiceAccount(clientName, orgID string, kc *keycloak.Instance) (*key
 		return &keycloak.ClientObject{}, fmt.Errorf("could not create client: %w", err)
 	}
 
+	// We can't use our own nice client lookup, because it relies on us having the client ID, which
+	// we don't have at this point, so we use the name. This GetClient function can be optimized to not
+	// have the loop by using new parameters for the search, these are not the same as the `q` parameter
+	// used in the users call.
 	foundClient, err := kc.GetClient(clientName)
 	if err != nil {
 		return &keycloak.ClientObject{}, fmt.Errorf("could not find client: %w", err)
 	}
 
-	err = kc.CreateMapper(foundClient.ID, "org_id", "String")
-	if err != nil {
-		return &keycloak.ClientObject{}, fmt.Errorf("could not create org_id mapper: %w", err)
+	attributes := map[string]string{
+		"org_id":          "String",
+		"service_account": "String",
+		"client_id":       "String",
 	}
-	err = kc.CreateMapper(foundClient.ID, "service_account", "String")
-	if err != nil {
-		return &keycloak.ClientObject{}, fmt.Errorf("could not create service_accounts mapper: %w", err)
+	for k, v := range attributes {
+		err = kc.CreateMapper(foundClient.ClientID, k, v)
+		if err != nil {
+			return &keycloak.ClientObject{}, fmt.Errorf("could not create [%s] mapper: %w", k, err)
+		}
 	}
 
-	foundServiceAccount, err := kc.GetServiceUser(foundClient.ID)
+	foundServiceAccount, err := kc.GetServiceUser(foundClient.ClientID)
 	if err != nil {
 		return &keycloak.ClientObject{}, fmt.Errorf("could not find clients service account: %w", err)
 	}
@@ -156,12 +170,20 @@ func CreateServiceAccount(clientName, orgID string, kc *keycloak.Instance) (*key
 	attrs := map[string]string{
 		"org_id":          orgID,
 		"service_account": "true",
+		"client_id":       foundClient.ClientID,
 	}
 
-	err = kc.AddServiceAccountAttributes(attrs, foundServiceAccount.ID)
+	err = kc.AddServiceUserAttributes(attrs, foundServiceAccount.ID)
 	if err != nil {
 		return &keycloak.ClientObject{}, fmt.Errorf("unable to add attributes: %w", err)
 	}
+
+	secret, err := kc.GetClientSecret(foundClient.ClientID)
+	if err != nil {
+		return &keycloak.ClientObject{}, fmt.Errorf("unable to get client secrets: %w", err)
+	}
+
+	foundClient.Secret = secret
 
 	return &foundClient, nil
 }

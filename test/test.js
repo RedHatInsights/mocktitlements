@@ -121,8 +121,8 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
                 console.log(res.text)
                 res.should.have.status(201);
                 JSON_response = JSON.parse(res.text);
-                expect(JSON_response['clientId']).eq("abcde");
-                expect(JSON_response['id']).not.null;
+                expect(JSON_response['name']).eq("abcde");
+                expect(JSON_response['clientId']).not.null;
             done();
         });
     });
@@ -139,6 +139,7 @@ describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max
                 JSON_response = JSON.parse(res.text);
                 console.log(JSON_response)
                 expect(Object.values(JSON_response).length).eq(1);
+                expect(Object.values(JSON_response)['secret']).not.null;
             done();
         });
     });
@@ -157,14 +158,16 @@ describe('/DELETE /auth/admin/realms/redhat-external/clients/:ClientId',() => {
                 console.log("TESTING " + res.text)
                 res.should.have.status(201);
                 JSON_response = JSON.parse(res.text);
-                expect(JSON_response['clientId']).eq("test_service_account");
-                expect(JSON_response['id']).not().null();
-                id = JSON_response['id'];
+                expect(JSON_response['name']).eq("test_service_account");
+                expect(JSON_response['clientId']).not.null;
+                id = JSON_response['clientId'];
+                console.log("++++" + id)
             done();
         });
     });
 
     it("deletes newly created Keycloak service account", (done) => {
+        console.log(id)
         chai.request(url)
             .delete('/auth/admin/realms/redhat-external/clients/' + id)
             .end((err,res) => {

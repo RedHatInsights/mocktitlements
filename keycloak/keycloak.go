@@ -35,6 +35,7 @@ type ClientObject struct {
 	ClientID string `json:"clientId"`
 	Name     string `json:"name"`
 	ID       string `json:"id"`
+	Secret   string `json:"secret"`
 }
 
 type ServiceAccountUser struct {
@@ -84,6 +85,11 @@ type mapperStruct struct {
 	Protocol       string       `json:"protocol"`
 	ProtocolMapper string       `json:"protocolMapper"`
 	Config         mapperConfig `json:"config"`
+}
+
+type credentialsObject struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }
 
 func createMapper(attr string, mtype string) mapperStruct {
@@ -214,7 +220,12 @@ func (kc *Instance) GetClient(clientName string) (ClientObject, error) {
 		}
 	}
 	kc.Log.Info(fmt.Sprintf("%v", foundClient))
-	return foundClient, nil
+
+	returnedClient := ClientObject{
+		ClientID: foundClient.ID,
+		Name:     foundClient.ClientID,
+	}
+	return returnedClient, nil
 }
 
 func (kc *Instance) CreateMapper(id, attributeName, attributeType string) error {
@@ -332,7 +343,7 @@ type AttributesRequest struct {
 	Attributes map[string][]string `json:"attributes"`
 }
 
-func (kc *Instance) AddServiceAccountAttributes(attrs map[string]string, id string) error {
+func (kc *Instance) AddServiceUserAttributes(attrs map[string]string, id string) error {
 
 	kcURL, err := url.Parse(kc.URL)
 	if err != nil {
@@ -376,4 +387,25 @@ func (kc *Instance) AddServiceAccountAttributes(attrs map[string]string, id stri
 	defer resp.Body.Close()
 
 	return nil
+}
+
+func (kc *Instance) GetClientSecret(clientID string) (string, error) {
+	resp, err := kc.Client.Get(fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s/client-secret", kc.URL, clientID))
+	if err != nil {
+		return "", fmt.Errorf("couldn't do request: %w", err)
+	}
+
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("couldn't read body data: %w", err)
+	}
+
+	obj := &credentialsObject{}
+	err = json.Unmarshal(data, obj)
+	if err != nil {
+		return "", fmt.Errorf("couldn't read body data: %w", err)
+	}
+
+	return obj.Value, nil
 }
