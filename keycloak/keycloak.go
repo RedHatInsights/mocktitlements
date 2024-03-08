@@ -23,6 +23,7 @@ type Instance struct {
 }
 
 type UsersSpec struct {
+	ID               string              `json:"id"`
 	Username         string              `json:"username"`
 	Enabled          bool                `json:"enabled"`
 	FirstName        string              `json:"firstName"`
@@ -33,15 +34,11 @@ type UsersSpec struct {
 }
 
 type ClientObject struct {
-	ClientID string `json:"clientId"`
-	Name     string `json:"name"`
-	ID       string `json:"id"`
-	Secret   string `json:"secret"`
-}
-
-type ServiceAccountUser struct {
-	Username string `json:"username"`
-	ID       string `json:"id"`
+	ClientID  string `json:"clientId"`
+	Name      string `json:"name"`
+	ID        string `json:"id"`
+	Secret    string `json:"secret"`
+	CreatedAt int64  `json:"createdAt"`
 }
 
 type attributes struct {
@@ -223,8 +220,9 @@ func (kc *Instance) GetClient(clientName string) (ClientObject, error) {
 	kc.Log.Info(fmt.Sprintf("%v", foundClient))
 
 	returnedClient := ClientObject{
-		ClientID: foundClient.ID,
-		Name:     foundClient.ClientID,
+		ClientID:  foundClient.ID,
+		Name:      foundClient.ClientID,
+		CreatedAt: foundClient.CreatedAt,
 	}
 	return returnedClient, nil
 }
@@ -320,22 +318,22 @@ func (kc *Instance) GetServiceAccountQuery(queryString string) ([]UsersSpec, err
 	return *obj, nil
 }
 
-func (kc *Instance) GetServiceUser(clientID string) (*ServiceAccountUser, error) {
+func (kc *Instance) GetServiceUser(clientID string) (*UsersSpec, error) {
 	resp, err := kc.Client.Get(fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s/service-account-user", kc.URL, clientID))
 	if err != nil {
 		kc.Log.Error(err, "could not get service account user")
-		return &ServiceAccountUser{}, fmt.Errorf("couldn't get service account user: %w", err)
+		return &UsersSpec{}, fmt.Errorf("couldn't get service account user: %w", err)
 	}
 	defer resp.Body.Close()
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return &ServiceAccountUser{}, fmt.Errorf("couldn't read body data: %w", err)
+		return &UsersSpec{}, fmt.Errorf("couldn't read body data: %w", err)
 	}
 
-	obj := &ServiceAccountUser{}
+	obj := &UsersSpec{}
 	err = json.Unmarshal(data, obj)
 	if err != nil {
-		return &ServiceAccountUser{}, fmt.Errorf("couldn't read body data: %w", err)
+		return &UsersSpec{}, fmt.Errorf("couldn't read body data: %w", err)
 	}
 	return obj, nil
 }

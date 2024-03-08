@@ -49,7 +49,7 @@ func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.
 func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
 	var saUser serviceAccountInput
 
-	orgID, err := getOrgID(r)
+	orgID, createdBy, err := getOrgInfo(r)
 	if err != nil {
 		return fmt.Errorf("couldn't get orgid: %w", err)
 	}
@@ -65,18 +65,12 @@ func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 		return fmt.Errorf("cannot unmarshal response body: %w", err)
 	}
 
-	clientObject, err := CreateServiceAccount(saUser.Name, orgID, kc)
+	serviceAccount, err := CreateServiceAccount(saUser.Name, orgID, createdBy, saUser.Description, kc)
 	if err != nil {
 		return fmt.Errorf("bad error: %w", err)
 	}
 
-	outputStruct := ServiceAccount{
-		Name:     clientObject.Name,
-		ClientID: clientObject.ClientID,
-		Secret:   clientObject.Secret,
-	}
-
-	outputBytes, err := json.Marshal(outputStruct)
+	outputBytes, err := json.Marshal(serviceAccount)
 	if err != nil {
 		return fmt.Errorf("there was an error constructing the JSON output object: %w", err)
 	}
@@ -86,28 +80,28 @@ func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	return nil
 }
 
-func getOrgID(r *http.Request) (string, error) {
+func getOrgInfo(r *http.Request) (string, string, error) {
 	xrhid := r.Header.Get("x-rh-identity")
 	output, err := base64.StdEncoding.DecodeString(xrhid)
 
 	if err != nil {
-		return "", fmt.Errorf("error obtaining xrhid: %w", err)
+		return "", "", fmt.Errorf("error obtaining xrhid: %w", err)
 	}
 
 	xrhidObject := &identity.XRHID{}
 	err = json.Unmarshal(output, xrhidObject)
 
 	if err != nil {
-		return "", fmt.Errorf("error unmarshalling xrhid: %w", err)
+		return "", "", fmt.Errorf("error unmarshalling xrhid: %w", err)
 	}
 
-	return xrhidObject.Identity.Internal.OrgID, nil
+	return xrhidObject.Identity.Internal.OrgID, xrhidObject.Identity.User.Username, nil
 }
 
 func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
 	var serviceAccountList []ServiceAccount
 
-	orgID, err := getOrgID(r)
+	orgID, _, err := getOrgInfo(r)
 	if err != nil {
 		return fmt.Errorf("couldn't get orgid: %w", err)
 	}
@@ -125,12 +119,12 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 		}
 
 		serviceAccountList = append(serviceAccountList, ServiceAccount{
-			ID:          "",
+			ID:          user.ID,
 			ClientID:    user.Attributes["client_id"][0],
 			Secret:      secret,
 			Name:        user.Username,
-			Description: "",
-			CreatedBy:   "",
+			Description: user.Attributes["description"][0],
+			CreatedBy:   user.Attributes["created_by"][0],
 			CreatedAt:   user.CreatedTimestamp,
 		})
 	}
@@ -165,11 +159,11 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	return nil
 }
 
-func CreateServiceAccount(clientName, orgID string, kc *keycloak.Instance) (*keycloak.ClientObject, error) {
+func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *keycloak.Instance) (*ServiceAccount, error) {
 
 	err := kc.CreateClient(clientName, orgID)
 	if err != nil {
-		return &keycloak.ClientObject{}, fmt.Errorf("could not create client: %w", err)
+		return &ServiceAccount{}, fmt.Errorf("could not create client: %w", err)
 	}
 
 	// We can't use our own nice client lookup, because it relies on us having the client ID, which
@@ -178,43 +172,57 @@ func CreateServiceAccount(clientName, orgID string, kc *keycloak.Instance) (*key
 	// used in the users call.
 	foundClient, err := kc.GetClient(clientName)
 	if err != nil {
-		return &keycloak.ClientObject{}, fmt.Errorf("could not find client: %w", err)
+		return &ServiceAccount{}, fmt.Errorf("could not find client: %w", err)
 	}
 
 	attributes := map[string]string{
 		"org_id":          "String",
 		"service_account": "String",
 		"client_id":       "String",
+		"created_by":      "String",
+		"description":     "String",
 	}
 	for k, v := range attributes {
 		err = kc.CreateMapper(foundClient.ClientID, k, v)
 		if err != nil {
-			return &keycloak.ClientObject{}, fmt.Errorf("could not create [%s] mapper: %w", k, err)
+			return &ServiceAccount{}, fmt.Errorf("could not create [%s] mapper: %w", k, err)
 		}
 	}
 
 	foundServiceAccount, err := kc.GetServiceUser(foundClient.ClientID)
 	if err != nil {
-		return &keycloak.ClientObject{}, fmt.Errorf("could not find clients service account: %w", err)
+		return &ServiceAccount{}, fmt.Errorf("could not find clients service account: %w", err)
 	}
 
 	attrs := map[string]string{
 		"org_id":          orgID,
 		"service_account": "true",
 		"client_id":       foundClient.ClientID,
+		"created_by":      createdBy,
+		"description":     description,
 	}
 
 	err = kc.AddServiceUserAttributes(attrs, foundServiceAccount.ID)
 	if err != nil {
-		return &keycloak.ClientObject{}, fmt.Errorf("unable to add attributes: %w", err)
+		return &ServiceAccount{}, fmt.Errorf("unable to add attributes: %w", err)
 	}
 
 	secret, err := kc.GetClientSecret(foundClient.ClientID)
 	if err != nil {
-		return &keycloak.ClientObject{}, fmt.Errorf("unable to get client secrets: %w", err)
+		return &ServiceAccount{}, fmt.Errorf("unable to get client secrets: %w", err)
 	}
 
 	foundClient.Secret = secret
 
-	return &foundClient, nil
+	serviceAccount := ServiceAccount{
+		Name:        foundClient.Name,
+		ClientID:    foundClient.ClientID,
+		Secret:      foundClient.Secret,
+		CreatedAt:   foundServiceAccount.CreatedTimestamp,
+		ID:          foundServiceAccount.ID,
+		CreatedBy:   createdBy,
+		Description: description,
+	}
+
+	return &serviceAccount, nil
 }

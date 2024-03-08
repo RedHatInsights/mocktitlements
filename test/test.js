@@ -122,6 +122,8 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
                 console.log(res.text)
                 res.should.have.status(201);
                 JSON_response = JSON.parse(res.text);
+                console.log(JSON_response)
+
                 expect(JSON_response['name']).eq("abcde");
                 expect(JSON_response['clientId']).not.null;
             done();
@@ -140,6 +142,7 @@ describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max
                 res.should.have.status(200);
                 JSON_response = JSON.parse(res.text);
                 console.log(JSON_response)
+
                 expect(Object.values(JSON_response).length).eq(1);
                 expect(Object.values(JSON_response)['secret']).not.null;
             done();
