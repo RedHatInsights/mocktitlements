@@ -214,6 +214,7 @@ func compliance(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "\"result\": \"OK\"\n\"description\":\"\" ")
 }
 
+// MUST VALIDATE THAT THE BEARER TOKEN HAD THE RIGHT SCOPES
 func mainHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info(fmt.Sprintf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL))
 	switch {
