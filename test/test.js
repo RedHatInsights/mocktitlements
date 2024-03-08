@@ -182,8 +182,10 @@ describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max
 
                 expect(Object.values(JSON_response).length).eq(2);
 
-                expect(Object.values(JSON_response)[0]['name']).eq("service-account-integration_test_sa_1");
-                expect(Object.values(JSON_response)[1]['name']).eq("service-account-integration_test_sa_2");
+                expect(JSON_response[0]['name']).eq("service-account-integration_test_sa_1");
+                expect(JSON_response[1]['name']).eq("service-account-integration_test_sa_2");
+                expect(JSON_response[0]['createdBy']).eq("jdoe");
+                expect(JSON_response[1]['createdBy']).eq("jdoe");
             done();
         });
     });
@@ -212,4 +214,6 @@ describe('/DELETE /auth/admin/realms/redhat-external/clients/:ClientId',() => {
             done();
         });
     });
+
+    // TODO: Add test to attempt to get a deleted SA
 });
