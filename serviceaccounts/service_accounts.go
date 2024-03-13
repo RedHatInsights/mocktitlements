@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/RedHatInsights/mocktitlements/keycloak"
+	"github.com/google/uuid"
 	"github.com/redhatinsights/platform-go-middlewares/identity"
 )
 
@@ -106,7 +107,7 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 		return fmt.Errorf("couldn't get orgid: %w", err)
 	}
 
-	users, err := kc.GetServiceAccountQuery("org_id:" + orgID + " AND service_account:true")
+	users, err := kc.GetServiceAccountQuery("org_id:"+orgID+" AND service_account:true", r.URL.Query().Get("first"), r.URL.Query().Get("max"))
 	if err != nil {
 		return fmt.Errorf("couldn't get service account: %w", err)
 	}
@@ -161,7 +162,8 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 
 func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *keycloak.Instance) (*ServiceAccount, error) {
 
-	err := kc.CreateClient(clientName, orgID)
+	uuid := uuid.New().String()
+	err := kc.CreateClient(clientName, uuid, orgID)
 	if err != nil {
 		return &ServiceAccount{}, fmt.Errorf("could not create client: %w", err)
 	}
@@ -170,7 +172,7 @@ func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *
 	// we don't have at this point, so we use the name. This GetClient function can be optimized to not
 	// have the loop by using new parameters for the search, these are not the same as the `q` parameter
 	// used in the users call.
-	foundClient, err := kc.GetClient(clientName)
+	foundClient, err := kc.GetClient(uuid)
 	if err != nil {
 		return &ServiceAccount{}, fmt.Errorf("could not find client: %w", err)
 	}

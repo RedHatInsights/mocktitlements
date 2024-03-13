@@ -48,6 +48,7 @@ type attributes struct {
 }
 
 type clientStruct struct {
+	ID                        string         `json:"id"`
 	ClientID                  string         `json:"clientId"`
 	Name                      string         `json:"name"`
 	BearerOnly                bool           `json:"bearerOnly,omitempty"`
@@ -135,13 +136,14 @@ func GetKeycloakInstance(log logr.Logger) *Instance {
 	return kc
 }
 
-func (kc *Instance) CreateClient(clientName, orgID string) error {
+func (kc *Instance) CreateClient(clientName, uuid, orgID string) error {
 	postObj := clientStruct{
+		ID:                        uuid,
 		DisplayInConsole:          false,
-		Name:                      "",
+		Name:                      clientName,
 		FrontChannelLogout:        true,
 		AuthServices:              false,
-		ClientID:                  clientName,
+		ClientID:                  uuid,
 		PublicClient:              false,
 		DirectAccessGrantsEnabled: false,
 		StandardFlow:              false,
@@ -265,7 +267,7 @@ func (kc *Instance) CreateMapper(id, attributeName, attributeType string) error 
 	return nil
 }
 
-func (kc *Instance) GetServiceAccountQuery(queryString string) ([]UsersSpec, error) {
+func (kc *Instance) GetServiceAccountQuery(queryString, first, max string) ([]UsersSpec, error) {
 	kcURL, err := url.Parse(kc.URL)
 	if err != nil {
 		return []UsersSpec{}, fmt.Errorf("couldn't parse keycloak url: %w", err)
@@ -273,9 +275,12 @@ func (kc *Instance) GetServiceAccountQuery(queryString string) ([]UsersSpec, err
 
 	query := url.Values{}
 	query.Set("enabled", "true")
-	query.Set("first", "0")
-	query.Set("max", "51")
-
+	if first != "" {
+		query.Set("first", first)
+	}
+	if max != "" {
+		query.Set("max", max)
+	}
 	if queryString != "" {
 		query.Set("q", queryString)
 	}
