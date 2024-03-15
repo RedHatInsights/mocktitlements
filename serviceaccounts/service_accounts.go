@@ -212,13 +212,18 @@ func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *
 		return &ServiceAccount{}, fmt.Errorf("could not find clients service account: %w", err)
 	}
 
+	user, err := kc.FindUserByID(createdBy)
+	if err != nil {
+		return &ServiceAccount{}, fmt.Errorf("unable to retrieve user from keycloak: %w", err)
+	}
+
 	attrs := map[string][]string{
 		"org_id":          {orgID},
 		"service_account": {"true"},
 		"client_id":       {foundClient.ClientID},
 		"created_by":      {createdBy},
 		"description":     {description},
-		"newEntitlements": {"1", "2"},
+		"newEntitlements": user.Entitlements,
 	}
 
 	err = kc.AddServiceUserAttributes(attrs, foundServiceAccount.ID)

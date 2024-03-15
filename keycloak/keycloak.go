@@ -2,6 +2,7 @@ package keycloak
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	"github.com/redhatinsights/platform-go-middlewares/identity"
 
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -345,6 +347,26 @@ func (kc *Instance) GetServiceUser(clientID string) (*UsersSpec, error) {
 	return obj, nil
 }
 
+func (kc *Instance) GetKeycloakUser(clientID string) (*UsersSpec, error) {
+	resp, err := kc.Client.Get(fmt.Sprintf("%s/auth/admin/realms/redhat-external/users/%s", kc.URL, clientID))
+	if err != nil {
+		kc.Log.Error(err, "could not get service account user")
+		return &UsersSpec{}, fmt.Errorf("couldn't get service account user: %w", err)
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return &UsersSpec{}, fmt.Errorf("couldn't read body data: %w", err)
+	}
+
+	obj := &UsersSpec{}
+	err = json.Unmarshal(data, obj)
+	if err != nil {
+		return &UsersSpec{}, fmt.Errorf("couldn't read body data: %w", err)
+	}
+	return obj, nil
+}
+
 type AttributesRequest struct {
 	Attributes map[string][]string `json:"attributes"`
 }
@@ -410,4 +432,188 @@ func (kc *Instance) GetClientSecret(clientID string) (string, error) {
 	}
 
 	return obj.Value, nil
+}
+
+func (kc *Instance) getUserFromIdentity(r *http.Request) (*User, error) {
+	b64Identity := r.Header.Get("x-rh-identity")
+	if b64Identity == "" {
+		return &User{}, fmt.Errorf("no x-rh-identity header")
+	}
+
+	decodedIdentity, err := base64.StdEncoding.DecodeString(b64Identity)
+	if err != nil {
+		return &User{}, err
+	}
+
+	identity := &identity.XRHID{}
+	err = json.Unmarshal(decodedIdentity, &identity)
+	if err != nil {
+		return &User{}, err
+	}
+
+	if identity.Identity.Type != "User" || identity.Identity.User.Username == "" {
+		return &User{}, fmt.Errorf("x-rh-identity does not contain username ok")
+	}
+
+	user, err := kc.FindUserByID(identity.Identity.User.Username)
+	if err != nil {
+		return &User{}, err
+	}
+
+	return user, nil
+}
+
+type User struct {
+	Username      string   `json:"username"`
+	ID            int      `json:"id"`
+	Email         string   `json:"email"`
+	FirstName     string   `json:"first_name"`
+	LastName      string   `json:"last_name"`
+	AccountNumber string   `json:"account_number"`
+	AddressString string   `json:"address_string"`
+	IsActive      bool     `json:"is_active"`
+	IsOrgAdmin    bool     `json:"is_org_admin"`
+	IsInternal    bool     `json:"is_internal"`
+	Locale        string   `json:"locale"`
+	OrgID         int      `json:"org_id"`
+	DisplayName   string   `json:"display_name"`
+	Type          string   `json:"type"`
+	Entitlements  []string `json:"entitlements"`
+}
+
+func (kc *Instance) FindUserByID(username string) (*User, error) {
+	users, err := kc.getUsers()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		if user.Username == username {
+			return &user, nil
+		}
+	}
+	return nil, fmt.Errorf("User is not known")
+}
+
+func (kc *Instance) getUser(_ http.ResponseWriter, r *http.Request) (*User, error) {
+	userObj, err := kc.getUserFromIdentity(r)
+
+	if err != nil {
+		return &User{}, fmt.Errorf("couldn't find user: %s", err.Error())
+	}
+	return userObj, nil
+}
+
+func (kc *Instance) StatusHandler(_ http.ResponseWriter, _ *http.Request) {
+}
+
+func (kc *Instance) getUsers() (users []User, err error) {
+	resp, err := kc.Client.Get(kc.URL + "/auth/admin/realms/redhat-external/users?max=2000")
+	if err != nil {
+		fmt.Printf("\n\n%s\n\n", err.Error())
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return kc.parseUsers(data)
+}
+
+func (kc *Instance) parseUsers(data []byte) ([]User, error) {
+	obj := &[]UsersSpec{}
+
+	err := json.Unmarshal(data, obj)
+
+	if err != nil {
+		return nil, err
+	}
+
+	users := []User{}
+
+	for _, user := range *obj {
+		attributesToCheck := []string{"is_active", "is_org_admin", "is_internal", "account_id", "org_id", "entitlements", "account_number"}
+		valid := true
+		for _, attr := range attributesToCheck {
+			if len(user.Attributes[attr]) == 0 {
+				valid = false
+				kc.Log.Info(fmt.Sprintf("User %s does not have field [%s]", user.Username, attr))
+				continue
+			}
+		}
+
+		if !valid {
+			kc.Log.Info(fmt.Sprintf("Skipping user %s as attributes are missing", user.Username))
+			continue
+		}
+
+		IsActiveRaw := user.Attributes["is_active"][0]
+		IsActive, _ := strconv.ParseBool(IsActiveRaw)
+
+		IsOrgAdminRaw := user.Attributes["is_org_admin"][0]
+		IsOrgAdmin, _ := strconv.ParseBool(IsOrgAdminRaw)
+
+		IsInternalRaw := user.Attributes["is_internal"][0]
+		IsInternal, _ := strconv.ParseBool(IsInternalRaw)
+
+		IDRaw := user.Attributes["account_id"][0]
+		ID, _ := strconv.Atoi(IDRaw)
+
+		OrgIDRaw := user.Attributes["org_id"][0]
+		OrgID, _ := strconv.Atoi(OrgIDRaw)
+
+		// var entitle string
+
+		if len(user.Attributes["newEntitlements"]) != 0 {
+
+			// entitle = fmt.Sprintf("{%s}", strings.Join(user.Attributes["newEntitlements"], ","))
+
+		} else {
+			// entitle = user.Attributes["entitlements"][0]
+		}
+
+		users = append(users, User{
+			Username:      user.Username,
+			ID:            ID,
+			Email:         user.Email,
+			FirstName:     user.FirstName,
+			LastName:      user.LastName,
+			AccountNumber: user.Attributes["account_number"][0],
+			AddressString: "unknown",
+			IsActive:      IsActive,
+			IsOrgAdmin:    IsOrgAdmin,
+			IsInternal:    IsInternal,
+			Locale:        "en_US",
+			OrgID:         OrgID,
+			DisplayName:   user.FirstName,
+			Type:          "User",
+			Entitlements:  user.Attributes["newEntitlements"],
+		})
+	}
+
+	return users, nil
+}
+
+func (kc *Instance) Entitlements(w http.ResponseWriter, r *http.Request) {
+	userObj, err := kc.getUser(w, r)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("couldn't auth user: %s", err.Error()), http.StatusForbidden)
+		return
+	}
+
+	fmt.Fprint(w, userObj.Entitlements)
+}
+
+func (kc *Instance) Compliance(w http.ResponseWriter, r *http.Request) {
+	_, err := kc.getUser(w, r)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("couldn't auth user: %s", err.Error()), http.StatusForbidden)
+		return
+	}
+
+	fmt.Fprint(w, "\"result\": \"OK\"\n\"description\":\"\" ")
 }

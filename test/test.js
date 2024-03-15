@@ -41,8 +41,9 @@ describe('/POST /api/entitlements/v1/services',() => {
             .set("x-rh-identity", xrhidb64)
             .end((err,res) => {
                 res.should.have.status(200);
-                JSON_response = JSON.parse(res.text);
-                expect(Object.keys(JSON_response).length).eq(13);
+                
+                res.text.should.contain('"ansible": {"is_entitled": true, "is_trial": false}')
+                res.text.should.contain('"notifications": {"is_entitled": true, "is_trial": false}')
             done();
         });
     });
