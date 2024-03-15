@@ -160,6 +160,20 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	return nil
 }
 
+type MapperAttribute struct {
+	name         string
+	mapperType   string
+	isMultiValue bool
+}
+
+func createMapperAttribute(name, mapperType string, isMultiValue bool) MapperAttribute {
+	return MapperAttribute{
+		name:         name,
+		mapperType:   mapperType,
+		isMultiValue: isMultiValue,
+	}
+}
+
 func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *keycloak.Instance) (*ServiceAccount, error) {
 
 	uuid := uuid.New().String()
@@ -177,17 +191,19 @@ func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *
 		return &ServiceAccount{}, fmt.Errorf("could not find client: %w", err)
 	}
 
-	attributes := map[string]string{
-		"org_id":          "String",
-		"service_account": "String",
-		"client_id":       "String",
-		"created_by":      "String",
-		"description":     "String",
+	attributes := []MapperAttribute{
+		createMapperAttribute("org_id", "String", false),
+		createMapperAttribute("service_account", "String", false),
+		createMapperAttribute("client_id", "String", false),
+		createMapperAttribute("created_by", "String", false),
+		createMapperAttribute("description", "String", false),
+		createMapperAttribute("newEntitlements", "String", true),
 	}
-	for k, v := range attributes {
-		err = kc.CreateMapper(foundClient.ClientID, k, v)
+
+	for _, attr := range attributes {
+		err = kc.CreateMapper(foundClient.ClientID, attr.name, attr.mapperType, attr.isMultiValue)
 		if err != nil {
-			return &ServiceAccount{}, fmt.Errorf("could not create [%s] mapper: %w", k, err)
+			return &ServiceAccount{}, fmt.Errorf("could not create [%s] mapper: %w", attr.name, err)
 		}
 	}
 
@@ -196,12 +212,13 @@ func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *
 		return &ServiceAccount{}, fmt.Errorf("could not find clients service account: %w", err)
 	}
 
-	attrs := map[string]string{
-		"org_id":          orgID,
-		"service_account": "true",
-		"client_id":       foundClient.ClientID,
-		"created_by":      createdBy,
-		"description":     description,
+	attrs := map[string][]string{
+		"org_id":          {orgID},
+		"service_account": {"true"},
+		"client_id":       {foundClient.ClientID},
+		"created_by":      {createdBy},
+		"description":     {description},
+		"newEntitlements": {"1", "2"},
 	}
 
 	err = kc.AddServiceUserAttributes(attrs, foundServiceAccount.ID)

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -91,7 +92,7 @@ type credentialsObject struct {
 	Value string `json:"value"`
 }
 
-func createMapper(attr string, mtype string) mapperStruct {
+func createMapper(attr string, mtype string, isMultiValue bool) mapperStruct {
 	return mapperStruct{
 		Name:           attr,
 		Protocol:       "openid-connect",
@@ -104,6 +105,7 @@ func createMapper(attr string, mtype string) mapperStruct {
 			ClaimName:          attr,
 			JSONTypeLabel:      mtype,
 			Introspection:      "true",
+			Multivalued:        strconv.FormatBool(isMultiValue),
 		},
 	}
 }
@@ -229,8 +231,8 @@ func (kc *Instance) GetClient(clientName string) (ClientObject, error) {
 	return returnedClient, nil
 }
 
-func (kc *Instance) CreateMapper(id, attributeName, attributeType string) error {
-	mapperObj := createMapper(attributeName, attributeType)
+func (kc *Instance) CreateMapper(id, attributeName, attributeType string, isMultiValue bool) error {
+	mapperObj := createMapper(attributeName, attributeType, isMultiValue)
 
 	b, err := json.Marshal(mapperObj)
 	kc.Log.Info(string(b))
@@ -347,7 +349,7 @@ type AttributesRequest struct {
 	Attributes map[string][]string `json:"attributes"`
 }
 
-func (kc *Instance) AddServiceUserAttributes(attrs map[string]string, id string) error {
+func (kc *Instance) AddServiceUserAttributes(attrs map[string][]string, id string) error {
 
 	kcURL, err := url.Parse(kc.URL)
 	if err != nil {
@@ -361,11 +363,7 @@ func (kc *Instance) AddServiceUserAttributes(attrs map[string]string, id string)
 	}
 
 	attributes := AttributesRequest{
-		Attributes: map[string][]string{},
-	}
-
-	for k, v := range attrs {
-		attributes.Attributes[k] = []string{v}
+		Attributes: attrs,
 	}
 
 	requestBytes, err := json.Marshal(attributes)
