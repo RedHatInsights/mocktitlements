@@ -98,10 +98,10 @@ func createMapper(attr string, mtype string) mapperStruct {
 		ProtocolMapper: "oidc-usermodel-attribute-mapper",
 		Config: mapperConfig{
 			UserInfoTokenClaim: "true",
-			UserAttribute:      "",
+			UserAttribute:      attr,
 			IDTokenClaim:       "true",
 			AccessTokenClaim:   "true",
-			ClaimName:          "",
+			ClaimName:          attr,
 			JSONTypeLabel:      mtype,
 			Introspection:      "true",
 		},
