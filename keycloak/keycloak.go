@@ -496,7 +496,7 @@ func (kc *Instance) FindUserByID(username string) (*User, error) {
 	return nil, fmt.Errorf("User is not known")
 }
 
-func (kc *Instance) getUser(_ http.ResponseWriter, r *http.Request) (*User, error) {
+func (kc *Instance) GetUser(_ http.ResponseWriter, r *http.Request) (*User, error) {
 	userObj, err := kc.getUserFromIdentity(r)
 
 	if err != nil {
@@ -519,10 +519,10 @@ func (kc *Instance) getUsers() (users []User, err error) {
 		return nil, err
 	}
 
-	return kc.parseUsers(data)
+	return ParseUsers(kc.Log, data)
 }
 
-func (kc *Instance) parseUsers(data []byte) ([]User, error) {
+func ParseUsers(log logr.Logger, data []byte) ([]User, error) {
 	obj := &[]UsersSpec{}
 
 	err := json.Unmarshal(data, obj)
@@ -539,13 +539,13 @@ func (kc *Instance) parseUsers(data []byte) ([]User, error) {
 		for _, attr := range attributesToCheck {
 			if len(user.Attributes[attr]) == 0 {
 				valid = false
-				kc.Log.Info(fmt.Sprintf("User %s does not have field [%s]", user.Username, attr))
+				log.Info(fmt.Sprintf("User %s does not have field [%s]", user.Username, attr))
 				continue
 			}
 		}
 
 		if !valid {
-			kc.Log.Info(fmt.Sprintf("Skipping user %s as attributes are missing", user.Username))
+			log.Info(fmt.Sprintf("Skipping user %s as attributes are missing", user.Username))
 			continue
 		}
 
@@ -594,26 +594,4 @@ func (kc *Instance) parseUsers(data []byte) ([]User, error) {
 	}
 
 	return users, nil
-}
-
-func (kc *Instance) Entitlements(w http.ResponseWriter, r *http.Request) {
-	userObj, err := kc.getUser(w, r)
-
-	if err != nil {
-		http.Error(w, fmt.Sprintf("couldn't auth user: %s", err.Error()), http.StatusForbidden)
-		return
-	}
-
-	fmt.Fprint(w, userObj.Entitlements)
-}
-
-func (kc *Instance) Compliance(w http.ResponseWriter, r *http.Request) {
-	_, err := kc.getUser(w, r)
-
-	if err != nil {
-		http.Error(w, fmt.Sprintf("couldn't auth user: %s", err.Error()), http.StatusForbidden)
-		return
-	}
-
-	fmt.Fprint(w, "\"result\": \"OK\"\n\"description\":\"\" ")
 }

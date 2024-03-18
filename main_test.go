@@ -2,13 +2,16 @@ package main
 
 import (
 	"testing"
+
+	"github.com/RedHatInsights/mocktitlements/keycloak"
+	"github.com/go-logr/logr"
 )
 
 func TestGetUsersBadJSON(t *testing.T) {
 	str := `{"username":"jd"}`
 	data := []byte(str)
 
-	_, err := parseUsers(data)
+	_, err := keycloak.ParseUsers(logr.Discard(), data)
 
 	if err == nil {
 		t.Errorf("Error should have been generated")
@@ -28,7 +31,7 @@ func TestIncompleteAttributes(t *testing.T) {
 	}]`
 
 	data := []byte(str)
-	users, err := parseUsers(data)
+	users, err := keycloak.ParseUsers(logr.Discard(), data)
 	if err != nil {
 		t.Errorf("Error should not have been generated")
 	}
@@ -72,7 +75,7 @@ func TestValidUser(t *testing.T) {
 	}]`
 
 	data := []byte(str)
-	users, err := parseUsers(data)
+	users, err := keycloak.ParseUsers(logr.Discard(), data)
 	if err != nil {
 		t.Errorf("Error should not have been generated: %s", err)
 	}

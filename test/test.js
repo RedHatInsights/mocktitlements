@@ -2,6 +2,9 @@ let chai = require('chai');
 let chaiHttp = require('chai-http');
 let chaiJSON = require('chai-json');
 var expect = chai.expect;
+const { Issuer, custom } = require('openid-client');
+let client;
+let tokenSet;
 let should = chai.should();
 var assert = chai.assert;
 
@@ -10,6 +13,7 @@ chai.use(chaiHttp);
 chai.use(chaiJSON);
 
 const url= 'http://localhost:8090';
+const kcurl= 'http://localhost:8080';
 
 let jdoeUser = {
   name: "jdoe",
@@ -18,6 +22,35 @@ let jdoeUser = {
 
 let xrhid= {"identity": {"type": "User", "account_number": "0000001", "org_id": "000001", "user": {"username": "jdoe"}, "internal": {"org_id": "000001"}}};
 let xrhidb64= Buffer.from(JSON.stringify(xrhid)).toString('base64');
+
+before(async function() {
+    try{
+    const issuer = await Issuer.discover(kcurl+'/auth/realms/master');
+    console.log('OpenID Provider discovered:', issuer.metadata.issuer);
+
+    // Create a client instance
+    client = new issuer.Client({
+        client_id: 'admin-cli',
+        client_secret: '',
+    });
+
+    // Perform ROPC grant to obtain tokens
+    tokenSet = await client.grant({
+        grant_type: 'password',
+        username: 'admin',
+        password: 'change_me',
+        scope: 'openid', // Add scopes if necessary
+    });
+
+    console.log('Token set obtained:', tokenSet);
+    }catch (error) {
+        console.error('Error during setup:', error);
+        const decoder = new TextDecoder();
+        const str = decoder.decode(error.response.body);
+        console.error('Error during setup:', str);
+        throw error; // Rethrow the error to fail the test suite
+    }
+});
 
 /*
  * Test / route
@@ -137,9 +170,22 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
                 expect(JSON_response['description']).eq("first integration test service account created");
                 expect(JSON_response['createdBy']).eq("jdoe");
                 expect(JSON_response['createdAt']).not.null;
-
                 
             done();
+        });
+
+        client.requestResource(kcurl + '/auth/realms/redhat-external/users', tokenSet)
+        .then(function(resourceResponse) {
+            // Assert the response or perform other checks
+            assert.strictEqual(resourceResponse.statusCode, 200);
+            done(); // Call done to indicate that the test is complete
+        })
+        .catch(function(error) {
+            console.error('Error during test:', error);
+            const decoder = new TextDecoder();
+            const str = decoder.decode(error.response.body);
+            console.error('Error response body:', str);
+            done(error); // Call done with an error to indicate test failure
         });
     });
 

@@ -39,6 +39,28 @@ func main() {
 	}
 }
 
+func Entitlements(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
+	userObj, err := kc.GetUser(w, r)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("couldn't auth user: %s", err.Error()), http.StatusForbidden)
+		return
+	}
+
+	fmt.Fprint(w, userObj.Entitlements)
+}
+
+func Compliance(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
+	_, err := kc.GetUser(w, r)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("couldn't auth user: %s", err.Error()), http.StatusForbidden)
+		return
+	}
+
+	fmt.Fprint(w, "\"result\": \"OK\"\n\"description\":\"\" ")
+}
+
 // MUST VALIDATE THAT THE BEARER TOKEN HAD THE RIGHT SCOPES
 func mainHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info(fmt.Sprintf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL))
@@ -46,9 +68,9 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	case r.URL.Path == "/":
 		kc.StatusHandler(w, r)
 	case r.URL.Path == "/api/entitlements/v1/services":
-		kc.Entitlements(w, r)
+		Entitlements(w, r, kc)
 	case r.URL.Path == "/api/entitlements/v1/compliance":
-		kc.Compliance(w, r)
+		Compliance(w, r, kc)
 	case strings.Contains(r.URL.Path, "/auth/"):
 		sa.ServiceAccountHandler(w, r, kc)
 	}
