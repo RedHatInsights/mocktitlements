@@ -39,7 +39,10 @@ func main() {
 	}
 }
 
-func Entitlements(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
+func statusHandler(_ http.ResponseWriter, _ *http.Request) {
+}
+
+func entitlements(w http.ResponseWriter, r *http.Request) {
 	userObj, err := kc.GetUser(w, r)
 
 	if err != nil {
@@ -50,7 +53,7 @@ func Entitlements(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance)
 	fmt.Fprint(w, userObj.Entitlements)
 }
 
-func Compliance(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
+func compliance(w http.ResponseWriter, r *http.Request) {
 	_, err := kc.GetUser(w, r)
 
 	if err != nil {
@@ -66,11 +69,11 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info(fmt.Sprintf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL))
 	switch {
 	case r.URL.Path == "/":
-		kc.StatusHandler(w, r)
+		statusHandler(w, r)
 	case r.URL.Path == "/api/entitlements/v1/services":
-		Entitlements(w, r, kc)
+		entitlements(w, r)
 	case r.URL.Path == "/api/entitlements/v1/compliance":
-		Compliance(w, r, kc)
+		compliance(w, r)
 	case strings.Contains(r.URL.Path, "/auth/"):
 		sa.ServiceAccountHandler(w, r, kc)
 	}

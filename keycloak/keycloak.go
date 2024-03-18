@@ -505,9 +505,6 @@ func (kc *Instance) GetUser(_ http.ResponseWriter, r *http.Request) (*User, erro
 	return userObj, nil
 }
 
-func (kc *Instance) StatusHandler(_ http.ResponseWriter, _ *http.Request) {
-}
-
 func (kc *Instance) getUsers() (users []User, err error) {
 	resp, err := kc.Client.Get(kc.URL + "/auth/admin/realms/redhat-external/users?max=2000")
 	if err != nil {

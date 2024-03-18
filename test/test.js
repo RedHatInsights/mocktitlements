@@ -3,6 +3,7 @@ let chaiHttp = require('chai-http');
 let chaiJSON = require('chai-json');
 var expect = chai.expect;
 const { Issuer, custom } = require('openid-client');
+
 let client;
 let tokenSet;
 let should = chai.should();
@@ -16,8 +17,8 @@ const url= 'http://localhost:8090';
 const kcurl= 'http://localhost:8080';
 
 let jdoeUser = {
-  name: "jdoe",
-  password: "BOO"
+    name: "jdoe",
+    password: "BOO"
 };
 
 let xrhid= {"identity": {"type": "User", "account_number": "0000001", "org_id": "000001", "user": {"username": "jdoe"}, "internal": {"org_id": "000001"}}};
@@ -42,8 +43,7 @@ before(async function() {
         scope: 'openid', // Add scopes if necessary
     });
 
-    console.log('Token set obtained:', tokenSet);
-    }catch (error) {
+    } catch (error) {
         console.error('Error during setup:', error);
         const decoder = new TextDecoder();
         const str = decoder.decode(error.response.body);
@@ -153,43 +153,46 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
         let serviceAccount1 = {"name":"integration_test_sa_1","description":"first integration test service account created"}
 
         chai.request(url)
-            .post('/auth/realms/redhat-external/apis/service_accounts/v1')
-            .set("x-rh-identity", xrhidb64)
-            .send(serviceAccount1)
-            .end((err,res) => {
-                console.log(res.text)
-                JSON_response = JSON.parse(res.text);
-                console.log(JSON_response)
+        .post('/auth/realms/redhat-external/apis/service_accounts/v1')
+        .set("x-rh-identity", xrhidb64)
+        .send(serviceAccount1)
+        .end((err, res) => {
 
-                res.should.have.status(201);
-                id_1 = JSON_response['clientId'];
-                expect(JSON_response['id']).not.null;
-                expect(JSON_response['clientId']).not.null;
-                expect(JSON_response['secret']).not.null;
-                expect(JSON_response['name']).eq("service-account-"+id_1);
-                expect(JSON_response['description']).eq("first integration test service account created");
-                expect(JSON_response['createdBy']).eq("jdoe");
-                expect(JSON_response['createdAt']).not.null;
+            JSON_response = JSON.parse(res.text);
+    
+            res.should.have.status(201);
+            id_1 = JSON_response['clientId'];
+            expect(JSON_response['id']).not.null;
+            expect(JSON_response['clientId']).not.null;
+            expect(JSON_response['secret']).not.null;
+            expect(JSON_response['name']).eq("service-account-" + id_1);
+            expect(JSON_response['description']).eq("first integration test service account created");
+            expect(JSON_response['createdBy']).eq("jdoe");
+            expect(JSON_response['createdAt']).not.null;
+    
+            // Chain the client.requestResource() call inside the Chai request's end() callback
+            client.requestResource(kcurl + '/auth/admin/realms/redhat-external/users?enabled=true', tokenSet)
+                .then((resourceResponse) => {
+                    // Assert the response or perform other checks
+                    expect(resourceResponse.statusCode).eq(200);
+                    JSON_response = JSON.parse(resourceResponse.body);
+                    let found = 0;
+                    JSON_response.forEach(element => {
+                        if (element['username'] == "service-account-" + id_1) {
+                            found = 1;
+                            expect(element['attributes']['newEntitlements']).to.have.lengthOf(13);
+                        }
+                    });
+                    expect(found).eq(1);
+                    done();
+                }).catch(error => {
+                    done(error);
+                })
                 
-            done();
         });
 
-        client.requestResource(kcurl + '/auth/realms/redhat-external/users', tokenSet)
-        .then(function(resourceResponse) {
-            // Assert the response or perform other checks
-            assert.strictEqual(resourceResponse.statusCode, 200);
-            done(); // Call done to indicate that the test is complete
-        })
-        .catch(function(error) {
-            console.error('Error during test:', error);
-            const decoder = new TextDecoder();
-            const str = decoder.decode(error.response.body);
-            console.error('Error response body:', str);
-            done(error); // Call done with an error to indicate test failure
-        });
     });
-
-    it("should create a client to be deleted", (done) => {
+        it("should create a client to be deleted", (done) => {
         let serviceAccount2 = {"name":"integration_test_sa_2","description":"second integration test service account created"}
         
         chai.request(url)
