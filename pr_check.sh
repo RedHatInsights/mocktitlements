@@ -2,6 +2,8 @@
 
 set +x
 
+IMAGE="quay.io/cloudservices/mocktitlements"
+
 function push_image_to_quay() {
     local CICD_URL=https://raw.githubusercontent.com/RedHatInsights/bonfire/master/cicd
     curl -s $CICD_URL/bootstrap.sh > .cicd_bootstrap.sh && source .cicd_bootstrap.sh
