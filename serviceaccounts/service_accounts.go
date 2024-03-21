@@ -76,6 +76,7 @@ func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 		return fmt.Errorf("there was an error constructing the JSON output object: %w", err)
 	}
 
+	w.Header().Add("access-control-allow-origin", "*")
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprint(w, string(outputBytes))
 	return nil
@@ -134,6 +135,7 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 	if err != nil {
 		return fmt.Errorf("couldn't marshal serviceAccountList: %w", err)
 	}
+	w.Header().Add("access-control-allow-origin", "*")
 	fmt.Fprint(w, string(outputUsers))
 	return nil
 }
@@ -155,7 +157,7 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	defer resp.Body.Close()
 
 	kc.Log.Info(fmt.Sprintf("%v", resp))
-
+	w.Header().Add("access-control-allow-origin", "*")
 	w.WriteHeader(http.StatusNoContent)
 	return nil
 }
