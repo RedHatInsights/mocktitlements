@@ -188,6 +188,8 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1',() => {
             expect(JSON_response['description']).eq("first integration test service account created");
             expect(JSON_response['createdBy']).eq("jdoe");
             expect(JSON_response['createdAt']).not.null;
+
+            expect(JSON_response['id']).eq(JSON_response['clientId'])
     
             // Chain the client.requestResource() call inside the Chai request's end() callback
             client.requestResource(kcurl + '/auth/admin/realms/redhat-external/users?enabled=true', tokenSet)

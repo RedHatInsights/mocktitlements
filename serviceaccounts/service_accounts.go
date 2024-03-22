@@ -136,7 +136,7 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 		}
 
 		serviceAccountList = append(serviceAccountList, ServiceAccount{
-			ID:          user.ID,
+			ID:          user.Attributes["client_id"][0],
 			ClientID:    user.Attributes["client_id"][0],
 			Secret:      secret,
 			Name:        user.Username,
@@ -260,7 +260,7 @@ func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *
 		ClientID:    foundClient.ClientID,
 		Secret:      foundClient.Secret,
 		CreatedAt:   foundServiceAccount.CreatedTimestamp,
-		ID:          foundServiceAccount.ID,
+		ID:          foundClient.ClientID,
 		CreatedBy:   createdBy,
 		Description: description,
 	}
