@@ -249,8 +249,9 @@ describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max
             .get('/auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=50')
             .set("x-rh-identity", xrhidb64)
             .end((err,res) => {
+                console.log(res.text)
                 JSON_response = JSON.parse(res.text);
-                console.log(JSON_response)
+                
 
                 res.should.have.status(200);
 
@@ -288,4 +289,50 @@ describe('/DELETE /auth/realms/redhat-external/apis/service_accounts/v1/:ClientI
     });
 
     // TODO: Add test to attempt to get a deleted SA
+});
+
+describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1 /GET and /DELETE',() => {
+    let id_3 = "";
+    it("should create a client to be gotten before being deleted", (done) => {
+        let serviceAccount1 = {"name":"integration_test_sa_1","description":"first integration test service account created"}
+
+        chai.request(url)
+        .post('/auth/realms/redhat-external/apis/service_accounts/v1')
+        .set("x-rh-identity", xrhidb64)
+        .send(serviceAccount1)
+        .end((err, res) => {
+
+            JSON_response = JSON.parse(res.text);
+    
+            res.should.have.status(201);
+            id_3 = JSON_response['clientId'];
+            done();
+        });
+    });
+    it("should get a single service accounts", (done) => {
+        chai.request(url)
+            .get('/auth/realms/redhat-external/apis/service_accounts/v1/' + id_3)
+            .set("x-rh-identity", xrhidb64)
+            .end((err,res) => {
+                JSON_response = JSON.parse(res.text);
+                console.log(JSON_response)
+
+                res.should.have.status(200);
+
+                expect(JSON_response['createdBy']).eq("jdoe");
+                expect(JSON_response['id']).eq(id_3);
+                expect(JSON_response['clientId']).eq(id_3);
+            done();
+        });
+    });
+    it("deletes service account", (done) => {
+        console.log(id_3)
+        chai.request(url)
+            .delete('/auth/realms/redhat-external/apis/service_accounts/v1/' + id_3)
+            .set("x-rh-identity", xrhidb64)
+            .end((err,res) => {
+                res.should.have.status(204);
+            done();
+        });
+    });
 });

@@ -115,7 +115,7 @@ func getOrgInfo(r *http.Request) (string, string, error) {
 	return xrhidObject.Identity.Internal.OrgID, xrhidObject.Identity.User.Username, nil
 }
 
-func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
+func getServiceAccountList(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
 	var serviceAccountList = []ServiceAccount{}
 
 	orgID, _, err := getOrgInfo(r)
@@ -153,6 +153,56 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 	w.Header().Add("access-control-allow-origin", "*")
 	fmt.Fprint(w, string(outputUsers))
 	return nil
+}
+
+func getSingleServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance, uuid string) error {
+	orgID, _, err := getOrgInfo(r)
+	if err != nil {
+		return fmt.Errorf("couldn't get orgid: %w", err)
+	}
+
+	users, err := kc.GetServiceAccountQuery("org_id:"+orgID+" AND service_account:true AND client_id:"+uuid, r.URL.Query().Get("first"), r.URL.Query().Get("max"))
+	if err != nil {
+		return fmt.Errorf("couldn't get service account: %w", err)
+	}
+
+	if len(users) != 1 {
+		return fmt.Errorf("too many/few service accounts: %w", err)
+	}
+
+	user := users[0]
+
+	secret, err := kc.GetClientSecret(user.Attributes["client_id"][0])
+	if err != nil {
+		return fmt.Errorf("unable to get client secrets: %w", err)
+	}
+
+	serviceAccount := ServiceAccount{
+		ID:          user.Attributes["client_id"][0],
+		ClientID:    user.Attributes["client_id"][0],
+		Secret:      secret,
+		Name:        user.Username,
+		Description: user.Attributes["description"][0],
+		CreatedBy:   user.Attributes["created_by"][0],
+		CreatedAt:   user.CreatedTimestamp,
+	}
+
+	outputUsers, err := json.Marshal(serviceAccount)
+	if err != nil {
+		return fmt.Errorf("couldn't marshal serviceAccountList: %w", err)
+	}
+	w.Header().Add("access-control-allow-origin", "*")
+	fmt.Fprint(w, string(outputUsers))
+	return nil
+}
+
+func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
+	parts := strings.Split(r.URL.Path, "/")
+	if _, err := uuid.Parse(parts[len(parts)-1]); err != nil {
+		return getServiceAccountList(w, r, kc)
+	} else {
+		return getSingleServiceAccount(w, r, kc, parts[len(parts)-1])
+	}
 }
 
 func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
