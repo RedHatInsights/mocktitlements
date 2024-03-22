@@ -266,7 +266,7 @@ func createMapperAttribute(name, mapperType string, isMultiValue bool) MapperAtt
 func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *keycloak.Instance) (*ServiceAccount, error) {
 
 	uuid := uuid.New().String()
-	err := kc.CreateClient(clientName, uuid, orgID)
+	err := kc.CreateClient(clientName, uuid)
 	if err != nil {
 		return &ServiceAccount{}, fmt.Errorf("could not create client: %w", err)
 	}

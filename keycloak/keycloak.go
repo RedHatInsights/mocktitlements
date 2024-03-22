@@ -140,7 +140,7 @@ func GetKeycloakInstance(log logr.Logger) *Instance {
 	return kc
 }
 
-func (kc *Instance) CreateClient(clientName, uuid, orgID string) error {
+func (kc *Instance) CreateClient(clientName, uuid string) error {
 	postObj := clientStruct{
 		ID:                        uuid,
 		DisplayInConsole:          false,
@@ -161,39 +161,13 @@ func (kc *Instance) CreateClient(clientName, uuid, orgID string) error {
 		},
 	}
 
-	b, err := json.Marshal(postObj)
-	kc.Log.Info(string(b))
-
-	// This will go later - just to make linter happy
-	kc.Log.Info(orgID)
+	url := fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients", kc.URL)
+	err := kc.doRequest("POST", url, "create_client", postObj, nil, http.StatusCreated)
 
 	if err != nil {
-		return fmt.Errorf("couldn't marshal post object: %w", err)
+		return fmt.Errorf("error in client create: %w", err)
 	}
 
-	body := strings.NewReader(string(b))
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients", kc.URL), body)
-
-	if err != nil {
-		return fmt.Errorf("couldn't create request: %w", err)
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := kc.Client.Do(req)
-
-	if err != nil {
-		return fmt.Errorf("couldn't do post: %w", err)
-	}
-
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("could not read body data: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("create failed" + string(data))
-	}
 	return nil
 }
 
@@ -227,41 +201,68 @@ func (kc *Instance) GetClient(clientID string) (ClientObject, error) {
 	return returnedClient, nil
 }
 
-func (kc *Instance) CreateMapper(id, attributeName, attributeType string, isMultiValue bool) error {
-	mapperObj := createMapper(attributeName, attributeType, isMultiValue)
+func (kc *Instance) doRequest(method, url, purpose string, postData interface{}, postObject interface{}, expectedStatus int) error {
+	var body io.Reader
 
-	b, err := json.Marshal(mapperObj)
-	kc.Log.Info(string(b))
+	if postData != nil {
+		b, err := json.Marshal(postData)
+		kc.Log.Info(string(b))
 
-	if err != nil {
-		return fmt.Errorf("couldn't marshal post object for mapper: %w", err)
+		if err != nil {
+			return fmt.Errorf("couldn't marshal post object for %s: %w", purpose, err)
+		}
+
+		body = strings.NewReader(string(b))
 	}
 
-	kc.Log.Info(fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s/protocol-mappers/models", kc.URL, id))
+	kc.Log.Info(url)
 
-	body := strings.NewReader(string(b))
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s/protocol-mappers/models", kc.URL, id), body)
+	req, err := http.NewRequest(method, url, body)
 
 	if err != nil {
-		return fmt.Errorf("couldn't create mapper request: %w", err)
+		return fmt.Errorf("couldn't create %s request: %w", purpose, err)
 	}
 
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := kc.Client.Do(req)
 
 	if err != nil {
-		return fmt.Errorf("couldn't do mapper post: %w", err)
+		return fmt.Errorf("couldn't do %s post: %w", purpose, err)
 	}
 
 	defer resp.Body.Close()
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("could not read mapper body data: %w", err)
+		return fmt.Errorf("could not read %s body data: %w", purpose, err)
 	}
 
-	if resp.StatusCode != http.StatusCreated {
+	if postObject != nil {
+		err = json.Unmarshal(data, postObject)
+
+		if err != nil {
+			kc.Log.Error(err, "could not unmarshal data")
+			kc.Log.Info(fmt.Sprintf("%v", data))
+			return fmt.Errorf("could not unmarshal %s data: %w", purpose, err)
+		}
+	}
+
+	if expectedStatus != 0 && resp.StatusCode != expectedStatus {
 		return fmt.Errorf("create failed" + string(data))
 	}
+
+	return nil
+}
+
+func (kc *Instance) CreateMapper(id, attributeName, attributeType string, isMultiValue bool) error {
+	mapperObj := createMapper(attributeName, attributeType, isMultiValue)
+	url := fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s/protocol-mappers/models", kc.URL, id)
+
+	err := kc.doRequest("POST", url, "mapper", mapperObj, nil, http.StatusCreated)
+
+	if err != nil {
+		return fmt.Errorf("error in mapper create: %w", err)
+	}
+
 	return nil
 }
 
@@ -290,75 +291,38 @@ func (kc *Instance) GetServiceAccountQuery(queryString string, queryParams url.V
 		Path:     "auth/admin/realms/redhat-external/users",
 		RawQuery: query.Encode(),
 	}
-	re := strings.NewReader("")
-
-	req, err := http.NewRequest("GET", murl.String(), re)
-	if err != nil {
-		return []UsersSpec{}, fmt.Errorf("couldn't create request: %w", err)
-	}
-
-	kc.Log.Info(fmt.Sprintf("%v", req))
-	resp, err := kc.Client.Do(req)
-
-	if err != nil {
-		return []UsersSpec{}, fmt.Errorf("couldn't do request: %w", err)
-	}
-
-	kc.Log.Info(fmt.Sprintf("%v", resp))
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return []UsersSpec{}, fmt.Errorf("couldn't read body data: %w", err)
-	}
 
 	obj := &[]UsersSpec{}
-	err = json.Unmarshal(data, obj)
+	err = kc.doRequest("GET", murl.String(), "sa_query", nil, obj, http.StatusOK)
 
 	if err != nil {
-		kc.Log.Error(err, "could not unmarshal data")
-		kc.Log.Info(fmt.Sprintf("%v", data))
+		return []UsersSpec{}, fmt.Errorf("could not do service account query: %w", err)
 	}
 
 	return *obj, nil
 }
 
 func (kc *Instance) GetServiceUser(clientID string) (*UsersSpec, error) {
-	resp, err := kc.Client.Get(fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s/service-account-user", kc.URL, clientID))
+	obj := &UsersSpec{}
+	url := fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s/service-account-user", kc.URL, clientID)
+	err := kc.doRequest("GET", url, "sa_user", nil, obj, http.StatusOK)
+
 	if err != nil {
-		kc.Log.Error(err, "could not get service account user")
-		return &UsersSpec{}, fmt.Errorf("couldn't get service account user: %w", err)
-	}
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return &UsersSpec{}, fmt.Errorf("couldn't read body data: %w", err)
+		return &UsersSpec{}, nil
 	}
 
-	obj := &UsersSpec{}
-	err = json.Unmarshal(data, obj)
-	if err != nil {
-		return &UsersSpec{}, fmt.Errorf("couldn't unmarshal data: %w", err)
-	}
 	return obj, nil
 }
 
 func (kc *Instance) GetKeycloakUser(clientID string) (*UsersSpec, error) {
-	resp, err := kc.Client.Get(fmt.Sprintf("%s/auth/admin/realms/redhat-external/users/%s", kc.URL, clientID))
+	obj := &UsersSpec{}
+	url := fmt.Sprintf("%s/auth/admin/realms/redhat-external/users/%s", kc.URL, clientID)
+	err := kc.doRequest("GET", url, "kc_user", nil, obj, http.StatusOK)
+
 	if err != nil {
-		kc.Log.Error(err, "could not get service account user")
-		return &UsersSpec{}, fmt.Errorf("couldn't get service account user: %w", err)
-	}
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return &UsersSpec{}, fmt.Errorf("couldn't read body data: %w", err)
+		return &UsersSpec{}, nil
 	}
 
-	obj := &UsersSpec{}
-	err = json.Unmarshal(data, obj)
-	if err != nil {
-		return &UsersSpec{}, fmt.Errorf("couldn't unmarshal body data: %w", err)
-	}
 	return obj, nil
 }
 
@@ -383,47 +347,22 @@ func (kc *Instance) AddServiceUserAttributes(attrs map[string][]string, id strin
 		Attributes: attrs,
 	}
 
-	requestBytes, err := json.Marshal(attributes)
-	if err != nil {
-		return fmt.Errorf("couldn't create attributes request: %w", err)
-	}
-
-	re := strings.NewReader(string(requestBytes))
-
-	req, err := http.NewRequest("PUT", murl.String(), re)
-	if err != nil {
-		return fmt.Errorf("couldn't create request: %w", err)
-	}
-
-	kc.Log.Info(fmt.Sprintf("%v", req))
-	resp, err := kc.Client.Do(req)
+	err = kc.doRequest("PUT", murl.String(), "attrs", attributes, nil, http.StatusNoContent)
 
 	if err != nil {
 		return fmt.Errorf("couldn't do request: %w", err)
 	}
 
-	kc.Log.Info(fmt.Sprintf("%v", resp))
-	defer resp.Body.Close()
-
 	return nil
 }
 
 func (kc *Instance) GetClientSecret(clientID string) (string, error) {
-	resp, err := kc.Client.Get(fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s/client-secret", kc.URL, clientID))
-	if err != nil {
-		return "", fmt.Errorf("couldn't do request: %w", err)
-	}
-
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("couldn't read body data: %w", err)
-	}
-
+	url := fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s/client-secret", kc.URL, clientID)
 	obj := &credentialsObject{}
-	err = json.Unmarshal(data, obj)
+	err := kc.doRequest("GET", url, "client_secret", nil, obj, http.StatusOK)
+
 	if err != nil {
-		return "", fmt.Errorf("couldn't unmarshal body data: %w", err)
+		return "", fmt.Errorf("could not get client secret %w: ", err)
 	}
 
 	return obj.Value, nil
@@ -501,28 +440,14 @@ func (kc *Instance) GetUser(_ http.ResponseWriter, r *http.Request) (*User, erro
 }
 
 func (kc *Instance) getUsers() (users []User, err error) {
-	resp, err := kc.Client.Get(kc.URL + "/auth/admin/realms/redhat-external/users?max=2000")
-	if err != nil {
-		fmt.Printf("\n\n%s\n\n", err.Error())
-	}
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+	obj := &[]UsersSpec{}
+	url := kc.URL + "/auth/admin/realms/redhat-external/users?max=2000"
+	kc.doRequest("GET", url, "get users", nil, obj, http.StatusOK)
 
-	return ParseUsers(kc.Log, data)
+	return ParseUsers(kc.Log, obj)
 }
 
-func ParseUsers(log logr.Logger, data []byte) ([]User, error) {
-	obj := &[]UsersSpec{}
-
-	err := json.Unmarshal(data, obj)
-
-	if err != nil {
-		return nil, err
-	}
-
+func ParseUsers(log logr.Logger, obj *[]UsersSpec) ([]User, error) {
 	users := []User{}
 
 	for _, user := range *obj {
