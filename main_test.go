@@ -2,33 +2,24 @@ package main
 
 import (
 	"testing"
+
+	"github.com/RedHatInsights/mocktitlements/keycloak"
+	"github.com/go-logr/logr"
 )
 
-func TestGetUsersBadJSON(t *testing.T) {
-	str := `{"username":"jd"}`
-	data := []byte(str)
-
-	_, err := parseUsers(data)
-
-	if err == nil {
-		t.Errorf("Error should have been generated")
-	}
-}
-
 func TestIncompleteAttributes(t *testing.T) {
-	str := `[{
-		"username": "jd",
-		"enabled": true,
-		"firstName": "jd",
-		"lastName": "dj",
-		"email": "jddj@redhat.com",
-		"attributes": {
-			"test": ["test"]
-		}
-	}]`
+	usersspec := &[]keycloak.UsersSpec{{
+		Username:  "jd",
+		Enabled:   true,
+		FirstName: "jd",
+		LastName:  "dj",
+		Email:     "jddj@redhat.com",
+		Attributes: map[string][]string{
+			"test": {"test"},
+		},
+	}}
 
-	data := []byte(str)
-	users, err := parseUsers(data)
+	users, err := keycloak.ParseUsers(logr.Discard(), usersspec)
 	if err != nil {
 		t.Errorf("Error should not have been generated")
 	}
@@ -38,41 +29,39 @@ func TestIncompleteAttributes(t *testing.T) {
 }
 
 func TestValidUser(t *testing.T) {
-	str := `[{
-		"username": "jd",
-		"enabled": true,
-		"firstName": "jd",
-		"lastName": "dj",
-		"email": "jddj@redhat.com",
-		"attributes": {
-			"is_internal": ["true"],
-			"is_org_admin": ["true"],
-			"is_active": ["true"],
-			"account_id": ["1"],
-			"org_id": ["1"],
-			"account_number": ["1"],
-			"entitlements": [""]
-		}
-	},
-	{
-		"username": "jd2",
-		"enabled": true,
-		"firstName": "jd",
-		"lastName": "dj",
-		"email": "jddj@redhat.com",
-		"attributes": {
-			"is_internal": ["true"],
-			"is_org_admin": ["true"],
-			"is_active": ["true"],
-			"account_id": ["1"],
-			"org_id": ["1"],
-			"account_number": ["1"],
-			"entitlements": [""]
-		}
-	}]`
+	usersspec := &[]keycloak.UsersSpec{{
+		Username:  "jd",
+		Enabled:   true,
+		FirstName: "jd",
+		LastName:  "dj",
+		Email:     "jddj@redhat.com",
+		Attributes: map[string][]string{
+			"is_internal":    {"true"},
+			"is_org_admin":   {"true"},
+			"is_active":      {"true"},
+			"account_id":     {"1"},
+			"org_id":         {"1"},
+			"account_number": {"1"},
+			"entitlements":   {""},
+		},
+	}, {
+		Username:  "jd2",
+		Enabled:   true,
+		FirstName: "jd",
+		LastName:  "dj",
+		Email:     "jddj@redhat.com",
+		Attributes: map[string][]string{
+			"is_internal":    {"true"},
+			"is_org_admin":   {"true"},
+			"is_active":      {"true"},
+			"account_id":     {"1"},
+			"org_id":         {"1"},
+			"account_number": {"1"},
+			"entitlements":   {""},
+		},
+	}}
 
-	data := []byte(str)
-	users, err := parseUsers(data)
+	users, err := keycloak.ParseUsers(logr.Discard(), usersspec)
 	if err != nil {
 		t.Errorf("Error should not have been generated: %s", err)
 	}
