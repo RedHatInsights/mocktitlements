@@ -163,7 +163,7 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	var id string
 
 	// Check if the path matches the beginning
-	expectedPath := "/auth/realms/redhat-external/clients"
+	expectedPath := "/auth/realms/redhat-external/apis/service_accounts/v1"
 	if strings.HasPrefix(r.URL.Path, expectedPath) {
 		// Extract the ID from the end
 		id = parts[len(parts)-1]
