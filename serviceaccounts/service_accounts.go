@@ -200,9 +200,9 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 	parts := strings.Split(r.URL.Path, "/")
 	if _, err := uuid.Parse(parts[len(parts)-1]); err != nil {
 		return getServiceAccountList(w, r, kc)
-	} else {
-		return getSingleServiceAccount(w, r, kc, parts[len(parts)-1])
 	}
+
+	return getSingleServiceAccount(w, r, kc, parts[len(parts)-1])
 }
 
 func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
