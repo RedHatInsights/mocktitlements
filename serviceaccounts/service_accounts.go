@@ -271,10 +271,6 @@ func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *
 		return &ServiceAccount{}, fmt.Errorf("could not create client: %w", err)
 	}
 
-	// We can't use our own nice client lookup, because it relies on us having the client ID, which
-	// we don't have at this point, so we use the name. This GetClient function can be optimized to not
-	// have the loop by using new parameters for the search, these are not the same as the `q` parameter
-	// used in the users call.
 	foundClient, err := kc.GetClient(uuid)
 	if err != nil {
 		return &ServiceAccount{}, fmt.Errorf("could not find client: %w", err)
@@ -319,13 +315,6 @@ func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *
 	if err != nil {
 		return &ServiceAccount{}, fmt.Errorf("unable to add attributes: %w", err)
 	}
-
-	secret, err := kc.GetClientSecret(foundClient.ClientID)
-	if err != nil {
-		return &ServiceAccount{}, fmt.Errorf("unable to get client secrets: %w", err)
-	}
-
-	foundClient.Secret = secret
 
 	serviceAccount := ServiceAccount{
 		Name:        foundServiceAccount.Username,

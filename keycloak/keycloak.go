@@ -197,8 +197,8 @@ func (kc *Instance) CreateClient(clientName, uuid, orgID string) error {
 	return nil
 }
 
-func (kc *Instance) GetClient(clientName string) (ClientObject, error) {
-	resp, err := kc.Client.Get(fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients", kc.URL))
+func (kc *Instance) GetClient(clientID string) (ClientObject, error) {
+	resp, err := kc.Client.Get(fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients/%s", kc.URL, clientID))
 	if err != nil {
 		kc.Log.Error(err, "could not get client")
 	}
@@ -209,26 +209,20 @@ func (kc *Instance) GetClient(clientName string) (ClientObject, error) {
 		kc.Log.Error(err, "could not read body data")
 	}
 
-	clientList := []ClientObject{}
+	foundClient := ClientObject{}
 
-	err = json.Unmarshal(data, &clientList)
+	err = json.Unmarshal(data, &foundClient)
 	if err != nil {
 		kc.Log.Error(err, "could not unmarshal clientid")
 	}
 
-	var foundClient ClientObject
-	for _, kclient := range clientList {
-		if kclient.ClientID == clientName {
-			foundClient = kclient
-			break
-		}
-	}
 	kc.Log.Info(fmt.Sprintf("%v", foundClient))
 
 	returnedClient := ClientObject{
 		ClientID:  foundClient.ID,
 		Name:      foundClient.ClientID,
 		CreatedAt: foundClient.CreatedAt,
+		Secret:    foundClient.Secret,
 	}
 	return returnedClient, nil
 }
