@@ -264,11 +264,11 @@ describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max
 });
 
 // Test deleteServiceAccount
-describe('/DELETE /auth/admin/realms/redhat-external/clients/:ClientId',() => {
+describe('/DELETE /auth/realms/redhat-external/clients/:ClientId',() => {
     it("deletes newly created Keycloak service account", (done) => {
         console.log(id_1)
         chai.request(url)
-            .delete('/auth/admin/realms/redhat-external/clients/' + id_1)
+            .delete('/auth/realms/redhat-external/clients/' + id_1)
             .set("x-rh-identity", xrhidb64)
             .end((err,res) => {
                 res.should.have.status(204);
@@ -279,7 +279,7 @@ describe('/DELETE /auth/admin/realms/redhat-external/clients/:ClientId',() => {
     it("deletes newly created Keycloak service account", (done) => {
         console.log(id_2)
         chai.request(url)
-            .delete('/auth/admin/realms/redhat-external/clients/' + id_2)
+            .delete('/auth/realms/redhat-external/clients/' + id_2)
             .set("x-rh-identity", xrhidb64)
             .end((err,res) => {
                 res.should.have.status(204);

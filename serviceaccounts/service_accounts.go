@@ -158,6 +158,22 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
 	kc.Log.Info(fmt.Sprintf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL))
 
+	parts := strings.Split(r.URL.Path, "/")
+
+	var id string
+
+	// Check if the path matches the beginning
+	expectedPath := "/auth/realms/redhat-external/clients"
+	if strings.HasPrefix(r.URL.Path, expectedPath) {
+		// Extract the ID from the end
+		id = parts[len(parts)-1]
+	} else {
+		return fmt.Errorf("path does not match the beginning: %s", expectedPath)
+	}
+
+	path := r.URL
+	path.Path = fmt.Sprintf("/auth/admin/realms/redhat-external/clients/%s", id)
+
 	body := strings.NewReader("")
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s%s", kc.URL, r.URL), body)
 	if err != nil {
@@ -168,6 +184,12 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	resp, err := kc.Client.Do(req)
 	if err != nil {
 		return fmt.Errorf("couldn't do delete: %w", err)
+	}
+	if resp.StatusCode == 404 {
+		return fmt.Errorf("not found")
+	}
+	if resp.StatusCode != 204 {
+		return fmt.Errorf("problem deleting: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 
