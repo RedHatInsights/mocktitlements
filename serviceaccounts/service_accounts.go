@@ -39,12 +39,27 @@ func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.
 		err = createServiceAccount(w, r, kc)
 	case r.Method == "DELETE":
 		err = deleteServiceAccount(w, r, kc)
+	case r.Method == "OPTIONS":
+		err = optionsServiceAccount(w, r)
 	}
 	if err != nil {
 		errString := fmt.Sprintf("%s", err)
 		kc.Log.Error(err, "error running function: ")
 		http.Error(w, errString, http.StatusInternalServerError)
 	}
+}
+
+func applyHeaders(w http.ResponseWriter) {
+	w.Header().Add("access-control-allow-credentials", "true")
+	w.Header().Add("access-control-allow-headers", "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, DPoP, Authorization")
+	w.Header().Add("access-control-allow-methods", "DELETE, POST, GET, PUT, PATCH")
+	w.Header().Add("access-control-allow-origin", "*")
+	w.Header().Add("access-control-max-age", "3600")
+}
+
+func optionsServiceAccount(w http.ResponseWriter, _ *http.Request) error {
+	applyHeaders(w)
+	return nil
 }
 
 func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
