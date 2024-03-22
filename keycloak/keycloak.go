@@ -343,7 +343,7 @@ func (kc *Instance) GetServiceUser(clientID string) (*UsersSpec, error) {
 	obj := &UsersSpec{}
 	err = json.Unmarshal(data, obj)
 	if err != nil {
-		return &UsersSpec{}, fmt.Errorf("couldn't read body data: %w", err)
+		return &UsersSpec{}, fmt.Errorf("couldn't unmarshal data: %w", err)
 	}
 	return obj, nil
 }
@@ -363,7 +363,7 @@ func (kc *Instance) GetKeycloakUser(clientID string) (*UsersSpec, error) {
 	obj := &UsersSpec{}
 	err = json.Unmarshal(data, obj)
 	if err != nil {
-		return &UsersSpec{}, fmt.Errorf("couldn't read body data: %w", err)
+		return &UsersSpec{}, fmt.Errorf("couldn't unmarshal body data: %w", err)
 	}
 	return obj, nil
 }
@@ -429,7 +429,7 @@ func (kc *Instance) GetClientSecret(clientID string) (string, error) {
 	obj := &credentialsObject{}
 	err = json.Unmarshal(data, obj)
 	if err != nil {
-		return "", fmt.Errorf("couldn't read body data: %w", err)
+		return "", fmt.Errorf("couldn't unmarshal body data: %w", err)
 	}
 
 	return obj.Value, nil
