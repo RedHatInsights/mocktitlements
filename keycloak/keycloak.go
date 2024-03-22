@@ -271,7 +271,7 @@ func (kc *Instance) CreateMapper(id, attributeName, attributeType string, isMult
 	return nil
 }
 
-func (kc *Instance) GetServiceAccountQuery(queryString, first, max string) ([]UsersSpec, error) {
+func (kc *Instance) GetServiceAccountQuery(queryString string, queryParams url.Values) ([]UsersSpec, error) {
 	kcURL, err := url.Parse(kc.URL)
 	if err != nil {
 		return []UsersSpec{}, fmt.Errorf("couldn't parse keycloak url: %w", err)
@@ -279,12 +279,13 @@ func (kc *Instance) GetServiceAccountQuery(queryString, first, max string) ([]Us
 
 	query := url.Values{}
 	query.Set("enabled", "true")
-	if first != "" {
-		query.Set("first", first)
+
+	for k, v := range queryParams {
+		for _, val := range v {
+			query.Add(k, val)
+		}
 	}
-	if max != "" {
-		query.Set("max", max)
-	}
+
 	if queryString != "" {
 		query.Set("q", queryString)
 	}

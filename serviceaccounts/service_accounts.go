@@ -123,7 +123,7 @@ func getServiceAccountList(w http.ResponseWriter, r *http.Request, kc *keycloak.
 		return fmt.Errorf("couldn't get orgid: %w", err)
 	}
 
-	users, err := kc.GetServiceAccountQuery("org_id:"+orgID+" AND service_account:true", r.URL.Query().Get("first"), r.URL.Query().Get("max"))
+	users, err := kc.GetServiceAccountQuery("org_id:"+orgID+" AND service_account:true", r.URL.Query())
 	if err != nil {
 		return fmt.Errorf("couldn't get service account: %w", err)
 	}
@@ -161,7 +161,7 @@ func getSingleServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloa
 		return fmt.Errorf("couldn't get orgid: %w", err)
 	}
 
-	users, err := kc.GetServiceAccountQuery("org_id:"+orgID+" AND service_account:true AND client_id:"+uuid, r.URL.Query().Get("first"), r.URL.Query().Get("max"))
+	users, err := kc.GetServiceAccountQuery("org_id:"+orgID+" AND service_account:true AND client_id:"+uuid, r.URL.Query())
 	if err != nil {
 		return fmt.Errorf("couldn't get service account: %w", err)
 	}
