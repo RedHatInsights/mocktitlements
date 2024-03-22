@@ -439,10 +439,13 @@ func (kc *Instance) GetUser(_ http.ResponseWriter, r *http.Request) (*User, erro
 	return userObj, nil
 }
 
-func (kc *Instance) getUsers() (users []User, err error) {
+func (kc *Instance) getUsers() ([]User, error) {
 	obj := &[]UsersSpec{}
 	url := kc.URL + "/auth/admin/realms/redhat-external/users?max=2000"
-	kc.doRequest("GET", url, "get users", nil, obj, http.StatusOK)
+	err := kc.doRequest("GET", url, "get users", nil, obj, http.StatusOK)
+	if err != nil {
+		return []User{}, fmt.Errorf("could not get users: %w", err)
+	}
 
 	return ParseUsers(kc.Log, obj)
 }

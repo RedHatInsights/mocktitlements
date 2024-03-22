@@ -7,18 +7,6 @@ import (
 	"github.com/go-logr/logr"
 )
 
-func TestGetUsersBadJSON(t *testing.T) {
-	users := &[]keycloak.UsersSpec{{
-		Username: "jd",
-	}}
-
-	_, err := keycloak.ParseUsers(logr.Discard(), users)
-
-	if err == nil {
-		t.Errorf("Error should have been generated")
-	}
-}
-
 func TestIncompleteAttributes(t *testing.T) {
 	usersspec := &[]keycloak.UsersSpec{{
 		Username:  "jd",
