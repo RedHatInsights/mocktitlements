@@ -145,6 +145,25 @@ describe('/POST /api/entitlements/v1/compliance',() => {
 });
 
 
+// Test getServiceAccount
+describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=50',() => {
+    it("should get an empty list of service accounts", (done) => {
+        chai.request(url)
+            .get('/auth/realms/redhat-external/apis/service_accounts/v1?first=0&max=50')
+            .set("x-rh-identity", xrhidb64)
+            .end((err,res) => {
+                JSON_response = JSON.parse(res.text);
+                console.log(JSON_response)
+
+                res.should.have.status(200);
+
+                expect(Object.values(JSON_response).length).eq(0);
+
+            done();
+        });
+    });
+});
+
 // Test createServiceAccount
 let id_1 = "";
 let id_2 = "";

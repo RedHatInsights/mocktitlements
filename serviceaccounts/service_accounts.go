@@ -116,7 +116,7 @@ func getOrgInfo(r *http.Request) (string, string, error) {
 }
 
 func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
-	var serviceAccountList []ServiceAccount
+	var serviceAccountList = []ServiceAccount{}
 
 	orgID, _, err := getOrgInfo(r)
 	if err != nil {
