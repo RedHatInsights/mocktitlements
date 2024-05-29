@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -50,7 +51,15 @@ func entitlements(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, userObj.Entitlements)
+	entitlements := fmt.Sprintf("{%s}", strings.Join(userObj.Entitlements, ","))
+
+	var v interface{}
+	jsonErr := json.Unmarshal([]byte(entitlements), &v)
+	if jsonErr != nil {
+		http.Error(w, jsonErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprint(w, entitlements)
 }
 
 func compliance(w http.ResponseWriter, r *http.Request) {
