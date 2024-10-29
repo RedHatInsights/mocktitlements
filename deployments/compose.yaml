@@ -1,6 +1,6 @@
 services:
   mocktitlements:
-    image: quay.io/cloudservices/mocktitlements:${MBOP_IMAGE_TAG}:-latest
+    image: quay.io/cloudservices/mocktitlements:${MBOP_IMAGE_TAG}
     build:
       context: ../
       dockerfile: Dockerfile
@@ -12,7 +12,7 @@ services:
       KEYCLOAK_PASSWORD: change_me
 
   keycloak:
-    image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG}:-23.0.5
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG}
     ports:
       - "8080:8080"
     command: ["start", "--import-realm", "--hostname-strict", "false", "--http-enabled", "true", "--http-relative-path", "/auth", "--health-enabled", "true", "--metrics-enabled", "true"]

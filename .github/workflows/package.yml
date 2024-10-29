@@ -9,6 +9,9 @@ jobs:
 
   testing:
     runs-on: ubuntu-20.04
+    env:
+      MBOP_IMAGE_TAG: 909dbd0
+      KEYCLOAK_IMAGE_TAG: 26.0
     steps:
       - name: Check out source code
         uses: actions/checkout@v1
