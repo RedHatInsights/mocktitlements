@@ -297,8 +297,9 @@ describe('/DELETE /auth/realms/redhat-external/apis/service_accounts/v1/:ClientI
 
 describe("/GET /auth/realms/redhat-external/apis/service_accounts/v1/", () => {
     it("should get a 404 when trying to access an invalid account", (done) => {
+        const bogusClient = [{"id":"13cea8c6-e32a-48c3-8abd-330f26d1c1a2","clientId":"1337-1337-DEAD-BEEF","secret":"2xT49UINx1MMYJTpMUbJtkqMEb61KdlA","name":"service-account-13cea8c6-e32a-48c3-8abd-330f26d1c1a2","description":"first integration test service account created","createdBy":"jdoe","createdAt":1730225299695},{"id":"e36e8da7-ce62-4ee9-88ee-8f5914365e9a","clientId":"e36e8da7-ce62-4ee9-88ee-8f5914365e9a","secret":"TYjFzUl1ooIeMomvXckuDCkG20C9mA9U","name":"service-account-e36e8da7-ce62-4ee9-88ee-8f5914365e9a","description":"second integration test service account created","createdBy":"jdoe","createdAt":1730225299964}]
         chai.request(url)
-        .get('/auth/realms/redhat-external/apis/service_accounts/v1/1337-BEEF-1337-BEEF')
+        .get('/auth/realms/redhat-external/apis/service_accounts/v1/' + bogusClient)
         .set("x-rh-identity", xrhidb64)
         .end((err,res) => {
             JSON_response = JSON.parse(res.text);
