@@ -247,7 +247,7 @@ func (kc *Instance) doRequest(method, url, purpose string, postData interface{},
 	}
 
 	if expectedStatus != 0 && resp.StatusCode != expectedStatus {
-		return fmt.Errorf("create failed" + string(data))
+		return fmt.Errorf("create failed: %s", string(data))
 	}
 
 	return nil

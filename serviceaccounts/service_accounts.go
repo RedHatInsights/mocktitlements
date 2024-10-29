@@ -34,7 +34,7 @@ func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.
 	httpErrorStatus := http.StatusInternalServerError
 	switch {
 	case r.Method == "GET":
-		// To match production 404 should be returned if 
+		// To match production 404 should be returned if
 		// a bogus service account is requested
 		httpErrorStatus = http.StatusNotFound
 		kc.Log.Info(fmt.Sprintf("query params: %s", r.URL.Query()))
