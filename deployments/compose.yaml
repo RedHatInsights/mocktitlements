@@ -10,9 +10,11 @@ services:
       KEYCLOAK_SERVER: http://keycloak:8080
       KEYCLOAK_USERNAME: admin
       KEYCLOAK_PASSWORD: change_me
+    networks:
+      - mocktitlements
 
   keycloak:
-    image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG:-23.0.5}
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG:-23.0.1}
     ports:
       - "8080:8080"
     command: ["start", "--import-realm", "--hostname-strict", "false", "--http-enabled", "true", "--http-relative-path", "/auth", "--health-enabled", "true", "--metrics-enabled", "true"]
@@ -31,6 +33,8 @@ services:
       - type: bind
         source: ${PWD}/test/data/redhat-external-realm.json
         target: /opt/keycloak/data/import/redhat-external-realm.json${SELINUX_LABEL}
+    networks:
+      - mocktitlements
 
   postgres:
     image: postgres:15
@@ -40,3 +44,10 @@ services:
       POSTGRES_PASSWORD: change_me
       POSTGRES_USER: admin
       POSTGRES_DB: test_db
+    networks:
+      - mocktitlements
+
+
+networks:
+  mocktitlements:
+    driver: bridge
