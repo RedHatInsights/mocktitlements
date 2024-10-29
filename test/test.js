@@ -304,8 +304,8 @@ describe("/GET /auth/realms/redhat-external/apis/service_accounts/v1/", () => {
             "name":"service-account-13cea8c6-e32a-48c3-8abd-330f26d1c1a2",
             "description":"first integration test service account created",
             "createdBy":"jdoe",
-            "createdAt":1730225299695}
-        {];}
+            "createdAt":1730225299695
+        }];
         chai.request(url)
         .get('/auth/realms/redhat-external/apis/service_accounts/v1/' + bogusClient)
         .set("x-rh-identity", xrhidb64)
