@@ -298,7 +298,7 @@ describe('/DELETE /auth/realms/redhat-external/apis/service_accounts/v1/:ClientI
 describe("/GET /auth/realms/redhat-external/apis/service_accounts/v1/", () => {
     it("should get a 404 when trying to access an invalid account", (done) => {
         chai.request(url)
-        .get('/auth/realms/redhat-external/apis/service_accounts/v1/1337')
+        .get('/auth/realms/redhat-external/apis/service_accounts/v1/1337-BEEF-1337-BEEF')
         .set("x-rh-identity", xrhidb64)
         .end((err,res) => {
             res.should.have.status(404);
