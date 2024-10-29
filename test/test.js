@@ -301,6 +301,8 @@ describe("/GET /auth/realms/redhat-external/apis/service_accounts/v1/", () => {
         .get('/auth/realms/redhat-external/apis/service_accounts/v1/1337-BEEF-1337-BEEF')
         .set("x-rh-identity", xrhidb64)
         .end((err,res) => {
+            JSON_response = JSON.parse(res.text);
+            console.log(JSON_response)
             res.should.have.status(404);
             done();
         });
