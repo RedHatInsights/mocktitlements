@@ -30,9 +30,13 @@ type serviceAccountInput struct {
 
 func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
 	var err error
-
+	// Default HTTP error status is 500
+	httpErrorStatus := http.StatusInternalServerError
 	switch {
 	case r.Method == "GET":
+		// To match production 404 should be returned if 
+		// a bogus service account is requested
+		httpErrorStatus = http.StatusNotFound
 		kc.Log.Info(fmt.Sprintf("query params: %s", r.URL.Query()))
 		err = getServiceAccounts(w, r, kc)
 	case r.Method == "POST":
@@ -45,7 +49,7 @@ func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.
 	if err != nil {
 		errString := fmt.Sprintf("%s", err)
 		kc.Log.Error(err, "error running function: ")
-		http.Error(w, errString, http.StatusInternalServerError)
+		http.Error(w, errString, httpErrorStatus)
 	}
 }
 
