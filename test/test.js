@@ -1,4 +1,4 @@
-tlet chai = require('chai');
+let chai = require('chai');
 let chaiHttp = require('chai-http');
 let chaiJSON = require('chai-json');
 var expect = chai.expect;
