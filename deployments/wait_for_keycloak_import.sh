@@ -4,10 +4,10 @@ COMPOSE_FILE="$1"
 CONTAINER_NAME="keycloak"
 SUCCESS_LOG_ENTRY="Import finished successfully"
 START_SECONDS="$SECONDS"
-TIMEOUT="100"
+TIMEOUT="60"
 
 success_entry_found() {
-  grep -Pq "$SUCCESS_LOG_ENTRY" <<< "$("$CONT" -f "$COMPOSE_FILE" logs "$CONTAINER_NAME" 2>/dev/null)"
+  grep -Pq "$SUCCESS_LOG_ENTRY" <<< "$(docker compose -f "$COMPOSE_FILE" logs "$CONTAINER_NAME" 2>/dev/null)"
 }
 
 init_checks() {
