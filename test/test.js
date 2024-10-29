@@ -325,6 +325,7 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1 /GET and /
     
             res.should.have.status(201);
             id_3 = JSON_response['clientId'];
+            console.log("Created Client ID:  " + id_3)
             done();
         });
     });
