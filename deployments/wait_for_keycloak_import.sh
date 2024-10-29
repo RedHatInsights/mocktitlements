@@ -4,7 +4,7 @@ COMPOSE_FILE="$1"
 CONTAINER_NAME="keycloak"
 SUCCESS_LOG_ENTRY="Import finished successfully"
 START_SECONDS="$SECONDS"
-TIMEOUT="60"
+TIMEOUT="100"
 
 success_entry_found() {
   grep -Pq "$SUCCESS_LOG_ENTRY" <<< "$("$CONT" -f "$COMPOSE_FILE" logs "$CONTAINER_NAME" 2>/dev/null)"
