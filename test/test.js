@@ -295,6 +295,19 @@ describe('/DELETE /auth/realms/redhat-external/apis/service_accounts/v1/:ClientI
     // TODO: Add test to attempt to get a deleted SA
 });
 
+describe("/GET /auth/realms/redhat-external/apis/service_accounts/v1/", () => {
+    it("should get a 404 when trying to access an invalid account", (done) => {
+        chai.request(url)
+        .get('/auth/realms/redhat-external/apis/service_accounts/v1/1337')
+        .set("x-rh-identity", xrhidb64)
+        .end((err,res) => {
+            res.should.have.status(404);
+            done();
+        });
+    });    
+});
+
+
 describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1 /GET and /DELETE',() => {
     let id_3 = "";
     it("should create a client to be gotten before being deleted", (done) => {
