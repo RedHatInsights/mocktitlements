@@ -9,19 +9,12 @@ jobs:
 
   testing:
     runs-on: ubuntu-20.04
-    env:
-      MBOP_IMAGE_TAG: 909dbd0
-      KEYCLOAK_IMAGE_TAG: 26.0
     steps:
       - name: Check out source code
         uses: actions/checkout@v1
       - name: Install package and dependencies
         run: |
-          sudo apt-get install -y golang-1.18
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker docker-compose
+          sudo apt-get install golang-1.18
       - name: Run Tests
         run: go test -v ./...
       - uses: actions/setup-node@v3

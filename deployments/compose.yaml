@@ -1,6 +1,6 @@
 services:
   mocktitlements:
-    image: quay.io/cloudservices/mocktitlements:${MBOP_IMAGE_TAG}
+    image: quay.io/cloudservices/mocktitlements:${MBOP_IMAGE_TAG:-latest}
     build:
       context: ../
       dockerfile: Dockerfile
@@ -12,7 +12,7 @@ services:
       KEYCLOAK_PASSWORD: change_me
 
   keycloak:
-    image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG}
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_IMAGE_TAG:-23.0.5}
     ports:
       - "8080:8080"
     command: ["start", "--import-realm", "--hostname-strict", "false", "--http-enabled", "true", "--http-relative-path", "/auth", "--health-enabled", "true", "--metrics-enabled", "true"]
@@ -29,8 +29,8 @@ services:
       PROXY_ADDRESS_FORWARDING: "true"
     volumes:
       - type: bind
-        source: ./test/data/redhat-external-realm.json
-        target: /opt/keycloak/data/import/redhat-external-realm.json:z
+        source: ${PWD}/test/data/redhat-external-realm.json
+        target: /opt/keycloak/data/import/redhat-external-realm.json${SELINUX_LABEL}
 
   postgres:
     image: postgres:15
