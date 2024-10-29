@@ -12,10 +12,10 @@ command_exists() {
 }
 
 set_compose_command() {
-  if command_exists "docker-compose"; then
-    echo "docker-compose"
-  elif command_exists "podman-compose"; then
-    echo "podman-compose"
+  if command_exists "docker"; then
+    echo "docker compose"
+  elif command_exists "podman"; then
+    echo "podman compose"
   fi
 }
 
@@ -33,7 +33,7 @@ init_checks() {
   COMPOSE_COMMAND="$(set_compose_command)"
 
   if [ -z "$COMPOSE_COMMAND" ]; then
-    echo "cannot find either docker-compose nor podman-compose in PATH"
+    echo "cannot find either docker compose nor podman compose in PATH"
     return 1
   fi
 }
