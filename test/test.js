@@ -23,7 +23,6 @@ let jdoeUser = {
 
 let xrhid= {"identity": {"type": "User", "account_number": "0000001", "org_id": "000001", "user": {"username": "jdoe"}, "internal": {"org_id": "000001"}}};
 let xrhidb64= Buffer.from(JSON.stringify(xrhid)).toString('base64');
-console.log(xrhidb64)
 before(async function() {
     try{
     const issuer = await Issuer.discover(kcurl+'/auth/realms/master');
@@ -334,7 +333,6 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1 /GET and /
     
             res.should.have.status(201);
             id_3 = JSON_response['clientId'];
-            console.log("Created Client ID:  " + id_3)
             done();
         });
     });
