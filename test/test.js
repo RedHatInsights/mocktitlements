@@ -23,7 +23,7 @@ let jdoeUser = {
 
 let xrhid= {"identity": {"type": "User", "account_number": "0000001", "org_id": "000001", "user": {"username": "jdoe"}, "internal": {"org_id": "000001"}}};
 let xrhidb64= Buffer.from(JSON.stringify(xrhid)).toString('base64');
-
+console.log(xrhidb64)
 before(async function() {
     try{
     const issuer = await Issuer.discover(kcurl+'/auth/realms/master');
@@ -296,28 +296,28 @@ describe('/DELETE /auth/realms/redhat-external/apis/service_accounts/v1/:ClientI
 });
 
 describe("/GET /auth/realms/redhat-external/apis/service_accounts/v1/", () => {
-    it("should get a 404 when trying to access an invalid account", (done) => {
-        const bogusClient = [{
-            "id":"1337-1337-DEAD-BEEF",
-            "clientId":"1337-1337-DEAD-BEEF",
-            "secret":"2xT49UINx1MMYJTpMUbJtkqMEb61KdlA",
-            "name":"service-account-13cea8c6-e32a-48c3-8abd-330f26d1c1a2",
-            "description":"first integration test service account created",
-            "createdBy":"jdoe",
-            "createdAt":1730225299695
-        }];
+    it("should get a 404 when trying to access an invalid account with a valid UID format", (done) => {
         chai.request(url)
-        .get('/auth/realms/redhat-external/apis/service_accounts/v1/' + bogusClient)
+        .get('/auth/realms/redhat-external/apis/service_accounts/v1/7bacc6a3-8806-40e0-87cc-99c6908404e4')
         .set("x-rh-identity", xrhidb64)
         .end((err,res) => {
-            JSON_response = JSON.parse(res.text);
-            console.log(JSON_response)
             res.should.have.status(404);
             done();
         });
     });    
 });
 
+describe("/GET /auth/realms/redhat-external/apis/service_accounts/v1/", () => {
+    it("should get a 404 when passing in something that isn't a UUID or a query string", (done) => {
+        chai.request(url)
+        .get('/auth/realms/redhat-external/apis/service_accounts/v1/DEADBEEF-8806-40e0-87cc-99c6908404e4')
+        .set("x-rh-identity", xrhidb64)
+        .end((err,res) => {
+            res.should.have.status(404);
+            done();
+        });
+    });    
+});
 
 describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1 /GET and /DELETE',() => {
     let id_3 = "";
