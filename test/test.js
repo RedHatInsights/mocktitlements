@@ -23,7 +23,6 @@ let jdoeUser = {
 
 let xrhid= {"identity": {"type": "User", "account_number": "0000001", "org_id": "000001", "user": {"username": "jdoe"}, "internal": {"org_id": "000001"}}};
 let xrhidb64= Buffer.from(JSON.stringify(xrhid)).toString('base64');
-
 before(async function() {
     try{
     const issuer = await Issuer.discover(kcurl+'/auth/realms/master');
@@ -293,6 +292,30 @@ describe('/DELETE /auth/realms/redhat-external/apis/service_accounts/v1/:ClientI
     });
 
     // TODO: Add test to attempt to get a deleted SA
+});
+
+describe("/GET /auth/realms/redhat-external/apis/service_accounts/v1/", () => {
+    it("should get a 404 when trying to access an invalid account with a valid UID format", (done) => {
+        chai.request(url)
+        .get('/auth/realms/redhat-external/apis/service_accounts/v1/7bacc6a3-8806-40e0-87cc-99c6908404e4')
+        .set("x-rh-identity", xrhidb64)
+        .end((err,res) => {
+            res.should.have.status(404);
+            done();
+        });
+    });    
+});
+
+describe("/GET /auth/realms/redhat-external/apis/service_accounts/v1/", () => {
+    it("should get a 404 when passing in something that isn't a UUID or a query string", (done) => {
+        chai.request(url)
+        .get('/auth/realms/redhat-external/apis/service_accounts/v1/DEADBEEF-8806-40e0-87cc-99c6908404e4')
+        .set("x-rh-identity", xrhidb64)
+        .end((err,res) => {
+            res.should.have.status(404);
+            done();
+        });
+    });    
 });
 
 describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1 /GET and /DELETE',() => {

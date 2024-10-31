@@ -30,9 +30,13 @@ type serviceAccountInput struct {
 
 func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
 	var err error
-
+	// Default HTTP error status is 500
+	httpErrorStatus := http.StatusInternalServerError
 	switch {
 	case r.Method == "GET":
+		// To match production 404 should be returned if
+		// a bogus service account is requested
+		httpErrorStatus = http.StatusNotFound
 		kc.Log.Info(fmt.Sprintf("query params: %s", r.URL.Query()))
 		err = getServiceAccounts(w, r, kc)
 	case r.Method == "POST":
@@ -45,7 +49,7 @@ func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.
 	if err != nil {
 		errString := fmt.Sprintf("%s", err)
 		kc.Log.Error(err, "error running function: ")
-		http.Error(w, errString, http.StatusInternalServerError)
+		http.Error(w, errString, httpErrorStatus)
 	}
 }
 
@@ -198,11 +202,21 @@ func getSingleServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloa
 
 func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
 	parts := strings.Split(r.URL.Path, "/")
-	if _, err := uuid.Parse(parts[len(parts)-1]); err != nil {
+	lastPart := parts[len(parts)-1]
+
+	// Try to parse as UUID
+	if _, err := uuid.Parse(lastPart); err == nil {
+		return getSingleServiceAccount(w, r, kc, lastPart)
+	}
+
+	// Check if any query parameters are present
+	if len(r.URL.Query()) > 0 {
 		return getServiceAccountList(w, r, kc)
 	}
 
-	return getSingleServiceAccount(w, r, kc, parts[len(parts)-1])
+	// If neither UUID nor query string, return an error response
+	http.Error(w, "Malformed input: expected UUID or query parameters", http.StatusBadRequest)
+	return fmt.Errorf("malformed input: neither UUID nor query parameters")
 }
 
 func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
