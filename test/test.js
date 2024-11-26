@@ -346,6 +346,7 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1 /GET and /
 
                 res.should.have.status(200);
 
+                expect(JSON_response['name']).eq("integration_test_sa_1");
                 expect(JSON_response['createdBy']).eq("jdoe");
                 expect(JSON_response['id']).eq(id_3);
                 expect(JSON_response['clientId']).eq(id_3);
