@@ -331,7 +331,7 @@ func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *
 	}
 
 	serviceAccount := ServiceAccount{
-		Name:        foundServiceAccount.Username,
+		Name:        foundClient.Name,
 		ClientID:    foundClient.ClientID,
 		Secret:      foundClient.Secret,
 		CreatedAt:   foundServiceAccount.CreatedTimestamp,

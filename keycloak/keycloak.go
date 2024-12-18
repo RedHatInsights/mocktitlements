@@ -194,7 +194,7 @@ func (kc *Instance) GetClient(clientID string) (ClientObject, error) {
 
 	returnedClient := ClientObject{
 		ClientID:  foundClient.ID,
-		Name:      foundClient.ClientID,
+		Name:      foundClient.Name,
 		CreatedAt: foundClient.CreatedAt,
 		Secret:    foundClient.Secret,
 	}
