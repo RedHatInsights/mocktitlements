@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/redhatinsights/platform-go-middlewares v1.0.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/oauth2 v0.20.0
+	golang.org/x/oauth2 v0.30.0
 )
 
 require (
