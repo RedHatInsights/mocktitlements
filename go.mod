@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.6
 
 require (
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
 	github.com/redhatinsights/platform-go-middlewares v1.0.0
