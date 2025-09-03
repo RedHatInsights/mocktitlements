@@ -16,8 +16,6 @@ require (
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
-	github.com/onsi/gomega v1.34.1 // indirect
+	github.com/onsi/gomega v1.38.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
 )
