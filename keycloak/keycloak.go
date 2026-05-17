@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/redhatinsights/platform-go-middlewares/identity"
+	"github.com/redhatinsights/platform-go-middlewares/v2/identity"
 
 	"golang.org/x/oauth2/clientcredentials"
 )

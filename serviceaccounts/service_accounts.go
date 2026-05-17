@@ -10,7 +10,7 @@ import (
 
 	"github.com/RedHatInsights/mocktitlements/keycloak"
 	"github.com/google/uuid"
-	"github.com/redhatinsights/platform-go-middlewares/identity"
+	"github.com/redhatinsights/platform-go-middlewares/v2/identity"
 )
 
 type ServiceAccount struct {
