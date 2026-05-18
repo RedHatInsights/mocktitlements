@@ -1,6 +1,6 @@
 module github.com/RedHatInsights/mocktitlements
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.6
 
@@ -16,8 +16,7 @@ require (
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
-	github.com/onsi/gomega v1.34.1 // indirect
+	github.com/onsi/gomega v1.41.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
 )
