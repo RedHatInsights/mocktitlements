@@ -19,7 +19,7 @@ jobs:
         run: go test -v ./...
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - name: Setup E2E testing environment
         run: docker compose -f deployments/compose.yaml up -d --build
       - name: Wait for Keycloak import to complete
