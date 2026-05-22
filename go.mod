@@ -1,8 +1,6 @@
 module github.com/RedHatInsights/mocktitlements
 
-go 1.23.0
-
-toolchain go1.24.6
+go 1.25.0
 
 require (
 	github.com/go-logr/logr v1.4.3
@@ -19,5 +17,5 @@ require (
 	github.com/onsi/gomega v1.34.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 )
