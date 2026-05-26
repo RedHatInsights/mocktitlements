@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -100,13 +101,13 @@ func createMapper(attr string, mtype string, isMultiValue bool) mapperStruct {
 		Protocol:       "openid-connect",
 		ProtocolMapper: "oidc-usermodel-attribute-mapper",
 		Config: mapperConfig{
-			UserInfoTokenClaim: "true",
+			UserInfoTokenClaim: strconv.FormatBool(true),
 			UserAttribute:      attr,
-			IDTokenClaim:       "true",
-			AccessTokenClaim:   "true",
+			IDTokenClaim:       strconv.FormatBool(true),
+			AccessTokenClaim:   strconv.FormatBool(true),
 			ClaimName:          attr,
 			JSONTypeLabel:      mtype,
-			Introspection:      "true",
+			Introspection:      strconv.FormatBool(true),
 			Multivalued:        strconv.FormatBool(isMultiValue),
 		},
 	}
@@ -161,7 +162,7 @@ func (kc *Instance) CreateClient(clientName, uuid string) error {
 		},
 	}
 
-	url := fmt.Sprintf("%s/auth/admin/realms/redhat-external/clients", kc.URL)
+	url := kc.URL + "/auth/admin/realms/redhat-external/clients"
 	err := kc.doRequest("POST", url, "create_client", postObj, nil, http.StatusCreated)
 
 	if err != nil {
@@ -331,7 +332,6 @@ type AttributesRequest struct {
 }
 
 func (kc *Instance) AddServiceUserAttributes(attrs map[string][]string, id string) error {
-
 	kcURL, err := url.Parse(kc.URL)
 	if err != nil {
 		return fmt.Errorf("couldn't parse keycloak url: %w", err)
@@ -340,7 +340,7 @@ func (kc *Instance) AddServiceUserAttributes(attrs map[string][]string, id strin
 	murl := url.URL{
 		Scheme: kcURL.Scheme,
 		Host:   kcURL.Host,
-		Path:   fmt.Sprintf("auth/admin/realms/redhat-external/users/%s", id),
+		Path:   "auth/admin/realms/redhat-external/users/" + id,
 	}
 
 	attributes := AttributesRequest{
@@ -371,7 +371,7 @@ func (kc *Instance) GetClientSecret(clientID string) (string, error) {
 func (kc *Instance) getUserFromIdentity(r *http.Request) (*User, error) {
 	b64Identity := r.Header.Get("x-rh-identity")
 	if b64Identity == "" {
-		return &User{}, fmt.Errorf("no x-rh-identity header")
+		return &User{}, errors.New("no x-rh-identity header")
 	}
 
 	decodedIdentity, err := base64.StdEncoding.DecodeString(b64Identity)
@@ -386,7 +386,7 @@ func (kc *Instance) getUserFromIdentity(r *http.Request) (*User, error) {
 	}
 
 	if identity.Identity.Type != "User" || identity.Identity.User.Username == "" {
-		return &User{}, fmt.Errorf("x-rh-identity does not contain username ok")
+		return &User{}, errors.New("x-rh-identity does not contain username ok")
 	}
 
 	user, err := kc.FindUserByID(identity.Identity.User.Username)
@@ -427,7 +427,7 @@ func (kc *Instance) FindUserByID(username string) (*User, error) {
 			return &user, nil
 		}
 	}
-	return nil, fmt.Errorf("User is not known")
+	return nil, errors.New("User is not known")
 }
 
 func (kc *Instance) GetUser(_ http.ResponseWriter, r *http.Request) (*User, error) {

@@ -19,7 +19,6 @@ var log logr.Logger
 var kc *keycloak.Instance
 
 func init() {
-
 	zapLog, err := zap.NewDevelopment()
 	if err != nil {
 		panic(fmt.Sprintf("who watches the watchmen (%v)?", err))
@@ -47,7 +46,7 @@ func entitlements(w http.ResponseWriter, r *http.Request) {
 	userObj, err := kc.GetUser(w, r)
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf("couldn't auth user: %s", err.Error()), http.StatusForbidden)
+		http.Error(w, "couldn't auth user: "+err.Error(), http.StatusForbidden)
 		return
 	}
 
@@ -66,7 +65,7 @@ func compliance(w http.ResponseWriter, r *http.Request) {
 	_, err := kc.GetUser(w, r)
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf("couldn't auth user: %s", err.Error()), http.StatusForbidden)
+		http.Error(w, "couldn't auth user: "+err.Error(), http.StatusForbidden)
 		return
 	}
 
