@@ -1,0 +1,15 @@
+.github
+.git
+.tekton
+deployments
+test
+.dockerignore
+.gitignore
+.golangci.yml
+.tool-versions
+build_deploy.sh
+Dockerfile
+pr_check.sh
+REDAME.md
+rebuild_and_test.sh
+renovate.yaml
