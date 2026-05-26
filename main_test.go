@@ -3,8 +3,9 @@ package main
 import (
 	"testing"
 
-	"github.com/RedHatInsights/mocktitlements/keycloak"
 	"github.com/go-logr/logr"
+
+	"github.com/RedHatInsights/mocktitlements/keycloak"
 )
 
 func TestIncompleteAttributes(t *testing.T) {

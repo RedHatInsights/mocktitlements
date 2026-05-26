@@ -1,0 +1,110 @@
+version: "2"
+linters:
+  default: none
+  enable:
+  - asasalint
+  - asciicheck
+  - bidichk
+  - bodyclose
+  - contextcheck
+  - copyloopvar
+  - decorder
+  - dogsled
+  - durationcheck
+  - embeddedstructfieldcheck
+  - errcheck
+  - errname
+  - errorlint
+  - exptostd
+  - fatcontext
+  - gocheckcompilerdirectives
+  - goconst
+  - gocritic
+  - gocyclo
+  - godoclint
+  - gosmopolitan
+  - govet
+  - iface
+  - ineffassign
+  - intrange
+  - iotamixing
+  - misspell
+  - mnd
+  - nolintlint
+  - perfsprint
+  - prealloc
+  - predeclared
+  - protogetter
+  - revive
+  - staticcheck
+  - testifylint
+  - thelper
+  - tparallel
+  - unconvert
+  - unused
+  - usestdlibvars
+  - usetesting
+  - whitespace
+  - zerologlint
+  settings:
+    gocyclo:
+      min-complexity: 15
+    mnd:
+      checks:
+      - case
+      - condition
+      - return
+    revive:
+      rules:
+      - name: var-naming
+        arguments:
+          - [] # allow list
+          - [] # block list
+          - - skip-package-name-checks: true # options
+    testifylint:
+      disable:
+      - require-error
+      go-require:
+        ignore-http-handlers: true
+    usetesting:
+      context-background: true
+      context-todo: true
+      os-chdir: true
+      os-mkdir-temp: true
+      os-setenv: true
+      os-temp-dir: true
+      os-create-temp: true
+  exclusions:
+    generated: lax
+    presets:
+    - comments
+    - common-false-positives
+    - legacy
+    - std-error-handling
+    rules:
+    - linters:
+      - errcheck
+      - goconst
+      - gocyclo
+      path: _test\.go
+    paths:
+    - third_party$
+    - builtin$
+    - examples$
+formatters:
+  enable:
+  - gofmt
+  - goimports
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+       local-prefixes:
+        - github.com/RedHatInsights/mocktitlements
+  exclusions:
+    generated: lax
+    paths:
+    - third_party$
+    - builtin$
+    - examples$
+    - zz_generated

@@ -3,14 +3,16 @@ package serviceaccounts
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
-	"github.com/RedHatInsights/mocktitlements/keycloak"
 	"github.com/google/uuid"
 	"github.com/redhatinsights/platform-go-middlewares/identity"
+
+	"github.com/RedHatInsights/mocktitlements/keycloak"
 )
 
 type ServiceAccount struct {
@@ -32,18 +34,18 @@ func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.
 	var err error
 	// Default HTTP error status is 500
 	httpErrorStatus := http.StatusInternalServerError
-	switch {
-	case r.Method == "GET":
+	switch r.Method {
+	case http.MethodGet:
 		// To match production 404 should be returned if
 		// a bogus service account is requested
 		httpErrorStatus = http.StatusNotFound
 		kc.Log.Info(fmt.Sprintf("query params: %s", r.URL.Query()))
 		err = getServiceAccounts(w, r, kc)
-	case r.Method == "POST":
+	case http.MethodPost:
 		err = createServiceAccount(w, r, kc)
-	case r.Method == "DELETE":
+	case http.MethodDelete:
 		err = deleteServiceAccount(w, r, kc)
-	case r.Method == "OPTIONS":
+	case http.MethodOptions:
 		err = optionsServiceAccount(w, r)
 	}
 	if err != nil {
@@ -133,7 +135,6 @@ func getServiceAccountList(w http.ResponseWriter, r *http.Request, kc *keycloak.
 	}
 
 	for _, user := range users {
-
 		secret, err := kc.GetClientSecret(user.Attributes["client_id"][0])
 		if err != nil {
 			return fmt.Errorf("unable to get client secrets: %w", err)
@@ -216,7 +217,7 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 
 	// If neither UUID nor query string, return an error response
 	http.Error(w, "Malformed input: expected UUID or query parameters", http.StatusBadRequest)
-	return fmt.Errorf("malformed input: neither UUID nor query parameters")
+	return errors.New("malformed input: neither UUID nor query parameters")
 }
 
 func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
@@ -236,10 +237,9 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	}
 
 	path := r.URL
-	path.Path = fmt.Sprintf("/auth/admin/realms/redhat-external/clients/%s", id)
+	path.Path = "/auth/admin/realms/redhat-external/clients/" + id
 
-	body := strings.NewReader("")
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s%s", kc.URL, r.URL), body)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s%s", kc.URL, r.URL), nil)
 	if err != nil {
 		return fmt.Errorf("couldn't create request: %w", err)
 	}
@@ -249,10 +249,14 @@ func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 	if err != nil {
 		return fmt.Errorf("couldn't do delete: %w", err)
 	}
-	if resp.StatusCode == 404 {
-		return fmt.Errorf("not found")
+	if resp.Body != nil {
+		defer resp.Body.Close()
 	}
-	if resp.StatusCode != 204 {
+
+	if resp.StatusCode == http.StatusNotFound {
+		return errors.New("not found")
+	}
+	if resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("problem deleting: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
@@ -278,7 +282,6 @@ func createMapperAttribute(name, mapperType string, isMultiValue bool) MapperAtt
 }
 
 func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *keycloak.Instance) (*ServiceAccount, error) {
-
 	uuid := uuid.New().String()
 	err := kc.CreateClient(clientName, uuid)
 	if err != nil {

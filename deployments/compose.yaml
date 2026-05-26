@@ -47,7 +47,6 @@ services:
     networks:
       - mocktitlements
 
-
 networks:
   mocktitlements:
     driver: bridge
