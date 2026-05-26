@@ -1,5 +1,8 @@
 # Build the manager binary
-FROM registry.access.redhat.com/ubi8/go-toolset:1.24.6-1756315360 as builder
+FROM registry.access.redhat.com/ubi9/go-toolset:1.25.9-1778675823 as builder
+
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -10,13 +13,12 @@ COPY go.sum go.sum
 USER 0
 RUN go mod download
 
-COPY main.go main.go
-COPY serviceaccounts/service_accounts.go serviceaccounts/service_accounts.go
-COPY keycloak/keycloak.go keycloak/keycloak.go
+COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on go build -ldflags="-w -s"
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10-1756195339
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1779777572
+
 WORKDIR /
 COPY --from=builder /workspace/mocktitlements .
 USER 65532:65532
