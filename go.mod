@@ -11,4 +11,4 @@ require (
 	golang.org/x/oauth2 v0.36.0
 )
 
-require go.uber.org/multierr v1.10.0 // indirect
+require go.uber.org/multierr v1.11.0 // indirect

@@ -17,7 +17,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on go build -ldflags="-w -s"
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1779777572
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1780378819
 
 WORKDIR /
 COPY --from=builder /workspace/mocktitlements .
