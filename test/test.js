@@ -187,7 +187,7 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1', () => {
         expect(JSON_response['clientId']).not.null;
         expect(JSON_response['userId']).not.null;
         expect(JSON_response['secret']).not.null;
-        expect(JSON_response['name']).eq("service-account-" + id_1);
+        expect(JSON_response['name']).eq("integration_test_sa_1");
         expect(JSON_response['description']).eq("first integration test service account created");
         expect(JSON_response['createdBy']).eq("jdoe");
         expect(JSON_response['createdAt']).not.null;
@@ -238,7 +238,7 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1', () => {
         expect(JSON_response['clientId']).not.null;
         expect(JSON_response['userId']).not.null;
         expect(JSON_response['secret']).not.null;
-        expect(JSON_response['name']).eq("service-account-" + id_2);
+        expect(JSON_response['name']).eq("integration_test_sa_2");
         expect(JSON_response['description']).eq("second integration test service account created");
         expect(JSON_response['createdBy']).eq("jdoe");
         expect(JSON_response['createdAt']).not.null;
@@ -268,6 +268,8 @@ describe('/GET /auth/realms/redhat-external/apis/service_accounts/v1?first=0&max
         expect(JSON_response[1]['createdBy']).eq("jdoe");
         expect(JSON_response[0]['userId']).not.null;
         expect(JSON_response[1]['userId']).not.null;
+        const names = JSON_response.map((sa) => sa.name);
+        expect(names).to.include.members(["integration_test_sa_1", "integration_test_sa_2"]);
         done();
       });
   });
@@ -359,6 +361,7 @@ describe('/POST /auth/realms/redhat-external/apis/service_accounts/v1 /GET and /
         expect(JSON_response['id']).eq(id_3);
         expect(JSON_response['clientId']).eq(id_3);
         expect(JSON_response['userId']).eq(userId_3);
+        expect(JSON_response['name']).eq("integration_test_sa_1");
         done();
       });
   });

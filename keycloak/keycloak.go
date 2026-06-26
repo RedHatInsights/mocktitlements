@@ -194,8 +194,8 @@ func (kc *Instance) GetClient(clientID string) (ClientObject, error) {
 	kc.Log.Info(fmt.Sprintf("%v", foundClient))
 
 	returnedClient := ClientObject{
-		ClientID:  foundClient.ID,
-		Name:      foundClient.ClientID,
+		ClientID:  foundClient.ClientID,
+		Name:      foundClient.Name,
 		CreatedAt: foundClient.CreatedAt,
 		Secret:    foundClient.Secret,
 	}
