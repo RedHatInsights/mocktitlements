@@ -31,6 +31,30 @@ type serviceAccountInput struct {
 	Description string `json:"description"`
 }
 
+type statusError struct {
+	status  int
+	message string
+}
+
+func (e statusError) Error() string {
+	return e.message
+}
+
+func writeJSON(w http.ResponseWriter, status int, v any) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("access-control-allow-origin", "*")
+	if status != http.StatusOK {
+		w.WriteHeader(status)
+	}
+	return json.NewEncoder(w).Encode(v)
+}
+
+func writeJSONError(w http.ResponseWriter, message string, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
+
 func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) {
 	var err error
 	// Default HTTP error status is 500
@@ -49,9 +73,13 @@ func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.
 		err = optionsServiceAccount(w, r)
 	}
 	if err != nil {
-		errString := fmt.Sprintf("%s", err)
+		status := httpErrorStatus
+		var se statusError
+		if errors.As(err, &se) {
+			status = se.status
+		}
 		kc.Log.Error(err, "error running function: ")
-		http.Error(w, errString, httpErrorStatus)
+		writeJSONError(w, err.Error(), status)
 	}
 }
 
@@ -97,10 +125,7 @@ func createServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.I
 		return fmt.Errorf("there was an error constructing the JSON output object: %w", err)
 	}
 
-	w.Header().Add("access-control-allow-origin", "*")
-	w.WriteHeader(http.StatusCreated)
-	fmt.Fprint(w, string(outputBytes))
-	return nil
+	return writeJSON(w, http.StatusCreated, json.RawMessage(outputBytes))
 }
 
 func getOrgInfo(r *http.Request) (string, string, error) {
@@ -163,9 +188,7 @@ func getServiceAccountList(w http.ResponseWriter, r *http.Request, kc *keycloak.
 	if err != nil {
 		return fmt.Errorf("couldn't marshal serviceAccountList: %w", err)
 	}
-	w.Header().Add("access-control-allow-origin", "*")
-	fmt.Fprint(w, string(outputUsers))
-	return nil
+	return writeJSON(w, http.StatusOK, json.RawMessage(outputUsers))
 }
 
 func getSingleServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance, uuid string) error {
@@ -211,9 +234,7 @@ func getSingleServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloa
 	if err != nil {
 		return fmt.Errorf("couldn't marshal serviceAccountList: %w", err)
 	}
-	w.Header().Add("access-control-allow-origin", "*")
-	fmt.Fprint(w, string(outputUsers))
-	return nil
+	return writeJSON(w, http.StatusOK, json.RawMessage(outputUsers))
 }
 
 func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
@@ -230,8 +251,10 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 		return getServiceAccountList(w, r, kc)
 	}
 
-	http.Error(w, "Malformed input: expected UUID or collection path", http.StatusBadRequest)
-	return errors.New("malformed input: neither UUID nor collection path")
+	return statusError{
+		status:  http.StatusBadRequest,
+		message: "malformed input: neither UUID nor collection path",
+	}
 }
 
 func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
