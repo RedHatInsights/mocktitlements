@@ -18,6 +18,7 @@ import (
 type ServiceAccount struct {
 	ID          string `json:"id"`
 	ClientID    string `json:"clientId"`
+	UserID      string `json:"userId"`
 	Secret      string `json:"secret"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -135,16 +136,24 @@ func getServiceAccountList(w http.ResponseWriter, r *http.Request, kc *keycloak.
 	}
 
 	for _, user := range users {
-		secret, err := kc.GetClientSecret(user.Attributes["client_id"][0])
+		clientID := user.Attributes["client_id"][0]
+
+		secret, err := kc.GetClientSecret(clientID)
 		if err != nil {
 			return fmt.Errorf("unable to get client secrets: %w", err)
 		}
 
+		foundClient, err := kc.GetClient(clientID)
+		if err != nil {
+			return fmt.Errorf("unable to get client: %w", err)
+		}
+
 		serviceAccountList = append(serviceAccountList, ServiceAccount{
-			ID:          user.Attributes["client_id"][0],
-			ClientID:    user.Attributes["client_id"][0],
+			ID:          clientID,
+			ClientID:    clientID,
+			UserID:      user.ID,
 			Secret:      secret,
-			Name:        user.Username,
+			Name:        foundClient.Name,
 			Description: user.Attributes["description"][0],
 			CreatedBy:   user.Attributes["created_by"][0],
 			CreatedAt:   user.CreatedTimestamp,
@@ -176,17 +185,24 @@ func getSingleServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloa
 	}
 
 	user := users[0]
+	clientID := user.Attributes["client_id"][0]
 
-	secret, err := kc.GetClientSecret(user.Attributes["client_id"][0])
+	secret, err := kc.GetClientSecret(clientID)
 	if err != nil {
 		return fmt.Errorf("unable to get client secrets: %w", err)
 	}
 
+	foundClient, err := kc.GetClient(clientID)
+	if err != nil {
+		return fmt.Errorf("unable to get client: %w", err)
+	}
+
 	serviceAccount := ServiceAccount{
-		ID:          user.Attributes["client_id"][0],
-		ClientID:    user.Attributes["client_id"][0],
+		ID:          clientID,
+		ClientID:    clientID,
+		UserID:      user.ID,
 		Secret:      secret,
-		Name:        user.Username,
+		Name:        foundClient.Name,
 		Description: user.Attributes["description"][0],
 		CreatedBy:   user.Attributes["created_by"][0],
 		CreatedAt:   user.CreatedTimestamp,
@@ -334,8 +350,9 @@ func CreateServiceAccount(clientName, orgID, createdBy, description string, kc *
 	}
 
 	serviceAccount := ServiceAccount{
-		Name:        foundServiceAccount.Username,
+		Name:        clientName,
 		ClientID:    foundClient.ClientID,
+		UserID:      foundServiceAccount.ID,
 		Secret:      foundClient.Secret,
 		CreatedAt:   foundServiceAccount.CreatedTimestamp,
 		ID:          foundClient.ClientID,
