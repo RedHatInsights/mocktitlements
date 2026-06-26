@@ -40,7 +40,6 @@ func ServiceAccountHandler(w http.ResponseWriter, r *http.Request, kc *keycloak.
 		// To match production 404 should be returned if
 		// a bogus service account is requested
 		httpErrorStatus = http.StatusNotFound
-		kc.Log.Info(fmt.Sprintf("query params: %s", r.URL.Query()))
 		err = getServiceAccounts(w, r, kc)
 	case http.MethodPost:
 		err = createServiceAccount(w, r, kc)
@@ -218,7 +217,7 @@ func getSingleServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloa
 }
 
 func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
-	parts := strings.Split(r.URL.Path, "/")
+	parts := strings.Split(strings.TrimSuffix(r.URL.Path, "/"), "/")
 	lastPart := parts[len(parts)-1]
 
 	// Try to parse as UUID
@@ -226,14 +225,13 @@ func getServiceAccounts(w http.ResponseWriter, r *http.Request, kc *keycloak.Ins
 		return getSingleServiceAccount(w, r, kc, lastPart)
 	}
 
-	// Check if any query parameters are present
-	if len(r.URL.Query()) > 0 {
+	// Collection endpoint; first/max query params are optional
+	if lastPart == "v1" {
 		return getServiceAccountList(w, r, kc)
 	}
 
-	// If neither UUID nor query string, return an error response
-	http.Error(w, "Malformed input: expected UUID or query parameters", http.StatusBadRequest)
-	return errors.New("malformed input: neither UUID nor query parameters")
+	http.Error(w, "Malformed input: expected UUID or collection path", http.StatusBadRequest)
+	return errors.New("malformed input: neither UUID nor collection path")
 }
 
 func deleteServiceAccount(w http.ResponseWriter, r *http.Request, kc *keycloak.Instance) error {
