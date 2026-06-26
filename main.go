@@ -46,7 +46,7 @@ func entitlements(w http.ResponseWriter, r *http.Request) {
 	userObj, err := kc.GetUser(w, r)
 
 	if err != nil {
-		writeJSONError(w, "couldn't auth user: "+err.Error(), http.StatusForbidden)
+		http.Error(w, "couldn't auth user: "+err.Error(), http.StatusForbidden)
 		return
 	}
 
@@ -55,10 +55,9 @@ func entitlements(w http.ResponseWriter, r *http.Request) {
 	var v interface{}
 	jsonErr := json.Unmarshal([]byte(entitlements), &v)
 	if jsonErr != nil {
-		writeJSONError(w, jsonErr.Error(), http.StatusInternalServerError)
+		http.Error(w, jsonErr.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, entitlements)
 }
 
@@ -66,18 +65,11 @@ func compliance(w http.ResponseWriter, r *http.Request) {
 	_, err := kc.GetUser(w, r)
 
 	if err != nil {
-		writeJSONError(w, "couldn't auth user: "+err.Error(), http.StatusForbidden)
+		http.Error(w, "couldn't auth user: "+err.Error(), http.StatusForbidden)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, "\"result\": \"OK\"\n\"description\":\"\" ")
-}
-
-func writeJSONError(w http.ResponseWriter, message string, status int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
 }
 
 // MUST VALIDATE THAT THE BEARER TOKEN HAD THE RIGHT SCOPES
