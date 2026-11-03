@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM registry.access.redhat.com/ubi9/go-toolset:1.25.9-1778675823 as builder
+FROM registry.access.redhat.com/hi/go:1.26.9-builder-1792443220@sha256:c62803d6a744c045f1087cefe8b2b046d09048bdc499dcf090eaa623f3b9452d as builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -17,7 +17,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on go build -ldflags="-w -s"
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1780378819
+FROM registry.access.redhat.com/hi/static:1792647314@sha256:c51e17de4a96e3bd68361830ec54f3c43ffcf398b82765a1ce250bd4a0d99d1f
 
 WORKDIR /
 COPY --from=builder /workspace/mocktitlements .

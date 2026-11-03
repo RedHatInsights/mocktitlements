@@ -37,7 +37,7 @@ services:
       - mocktitlements
 
   postgres:
-    image: postgres:15
+    image: registry.access.redhat.com/hi/postgresql:17.11@sha256:1fcfdb5a471611cacbdfb886c10c07183d366257e58148d416a8aa3d4c7e6dbf
     ports:
       - "5432:5432"
     environment:

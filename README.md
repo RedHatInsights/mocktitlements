@@ -137,8 +137,8 @@ inspection support.
 
 ## Container image
 
-The image is built from [`Dockerfile`][dockerfile] using a two-stage build (UBI9 go-toolset
-builder → UBI9 minimal runtime). The published image is available at
+The image is built from [`Dockerfile`][dockerfile] using a two-stage build (Red Hat Hardened
+Images Go builder → distroless static runtime). The published image is available at
 [`quay.io/cloudservices/mocktitlements`][quay-image].
 
 [running]: #running-with-docker-compose
